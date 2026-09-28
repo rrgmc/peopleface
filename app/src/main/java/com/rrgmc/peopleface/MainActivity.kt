@@ -1,6 +1,8 @@
 package com.rrgmc.peopleface
 
+import android.content.pm.ActivityInfo
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -28,6 +30,10 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            // Show "Ultra HDR" photos (gain map) as bright as the gallery does; no effect on other content.
+            window.colorMode = ActivityInfo.COLOR_MODE_HDR
+        }
         setContent {
             PeopleFaceTheme { AppNavigation() }
         }

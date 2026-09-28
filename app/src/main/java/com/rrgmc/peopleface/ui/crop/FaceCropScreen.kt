@@ -415,7 +415,8 @@ private fun CropCanvas(vm: CropViewModel) {
                     addRect(imageRect)
                     addRect(r)
                 }
-                drawPath(shade, Color.Black.copy(alpha = 0.55f))
+                // Light shade: enough to show the square, without making the photo look dark.
+                drawPath(shade, Color.Black.copy(alpha = 0.3f))
                 drawRect(Color.White, r.topLeft, r.size, style = stroke)
                 listOf(r.topLeft, r.topRight, r.bottomLeft, r.bottomRight).forEach {
                     drawCircle(Color.White, radius = 7.dp.toPx(), center = it)
