@@ -5,6 +5,7 @@ import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import com.rrgmc.peopleface.data.db.AppDatabase
 import com.rrgmc.peopleface.data.db.Role
+import com.rrgmc.peopleface.ui.common.familyLabels
 import com.rrgmc.peopleface.ui.quiz.pickOptions
 import com.rrgmc.peopleface.ui.search.matches
 import com.rrgmc.peopleface.ui.search.normalizeForSearch
@@ -153,6 +154,31 @@ class RepositoryTest {
         assertTrue(row.matches(normalizeForSearch("conceicao pinheiros")))
         assertTrue(row.matches(normalizeForSearch("FUTEBOL")))
         assertFalse(row.matches(normalizeForSearch("maria")))
+    }
+
+    @Test
+    fun familyLabelsTellApartSameNames() = runTest {
+        val g = repo.addGroup("School")
+        val f1 = repo.addPeople(g, 0, "", listOf(
+            Repository.NewPerson("Michelangelo", Role.FATHER),
+            Repository.NewPerson("Suzi", Role.MOTHER),
+            Repository.NewPerson("Isabella", Role.KID),
+            Repository.NewPerson("Milena", Role.KID),
+        ))!!
+        val f2 = repo.addPeople(g, 0, "Silva", listOf(Repository.NewPerson("Isabella", Role.KID), Repository.NewPerson("Leo", Role.KID)))!!
+        val f3 = repo.addPeople(g, 0, "", listOf(Repository.NewPerson("Ana", Role.KID)))!!
+        val rows = repo.observePersonsInGroup(g).first()
+        val labels = familyLabels(rows)
+        fun label(family: Long, name: String) = labels[rows.single { it.person.familyId == family && it.person.name == name }.person.id]
+
+        assertEquals("Michelangelo & Suzi", label(f1, "Isabella"))
+        assertEquals("Suzi", label(f1, "Michelangelo")) // never their own name
+        assertEquals("Silva · Leo", label(f2, "Isabella"))
+        assertEquals("", label(f3, "Ana"))
+
+        // Searching a parent's name finds the kid.
+        val isabella1 = rows.single { it.person.familyId == f1 && it.person.name == "Isabella" }
+        assertTrue(isabella1.matches(normalizeForSearch("isa michel"), label(f1, "Isabella")!!))
     }
 
     @Test

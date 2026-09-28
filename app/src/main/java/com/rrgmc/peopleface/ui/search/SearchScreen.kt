@@ -35,6 +35,7 @@ import com.rrgmc.peopleface.R
 import com.rrgmc.peopleface.appContainer
 import com.rrgmc.peopleface.data.db.PersonRow
 import com.rrgmc.peopleface.ui.common.Avatar
+import com.rrgmc.peopleface.ui.common.familyLabels
 import com.rrgmc.peopleface.ui.common.roleText
 import java.text.Normalizer
 
@@ -44,9 +45,10 @@ private val MARKS = "\\p{Mn}+".toRegex()
 fun normalizeForSearch(s: String): String =
     MARKS.replace(Normalizer.normalize(s, Normalizer.Form.NFD), "").lowercase()
 
-fun PersonRow.matches(normalizedQuery: String): Boolean =
+/** Every word of the query must appear in one of the person's texts; [extra] is e.g. the family label. */
+fun PersonRow.matches(normalizedQuery: String, extra: String = ""): Boolean =
     normalizedQuery.split(' ').filter { it.isNotBlank() }.all { term ->
-        listOf(person.name, person.roleLabel, person.notes, familyName, groupName)
+        listOf(person.name, person.roleLabel, person.notes, familyName, groupName, extra)
             .any { normalizeForSearch(it).contains(term) }
     }
 
@@ -56,9 +58,10 @@ fun SearchScreen(onBack: () -> Unit, onOpenPerson: (Long) -> Unit) {
     val repo = appContainer().repository
     val all by repo.observeAllPersons().collectAsStateWithLifecycle(initialValue = emptyList())
     var query by rememberSaveable { mutableStateOf("") }
+    val labels = remember(all) { familyLabels(all) }
     val results = remember(all, query) {
         val q = normalizeForSearch(query.trim())
-        if (q.isEmpty()) emptyList() else all.filter { it.matches(q) }
+        if (q.isEmpty()) emptyList() else all.filter { it.matches(q, labels[it.person.id].orEmpty()) }
     }
     val focus = remember { FocusRequester() }
     LaunchedEffect(Unit) { focus.requestFocus() }
@@ -92,7 +95,8 @@ fun SearchScreen(onBack: () -> Unit, onOpenPerson: (Long) -> Unit) {
                 item { Text(stringResource(R.string.no_results), Modifier.padding(16.dp)) }
             }
             items(results, key = { it.person.id }) { row ->
-                val details = listOf(roleText(row.person), row.familyName, row.groupName).filter { it.isNotBlank() }
+                val details = listOf(roleText(row.person), labels[row.person.id].orEmpty(), row.groupName)
+                    .filter { it.isNotBlank() }
                 ListItem(
                     leadingContent = { Avatar(row.thumb) },
                     headlineContent = { Text(row.person.name) },
