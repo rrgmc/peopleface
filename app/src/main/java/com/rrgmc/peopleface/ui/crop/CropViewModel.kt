@@ -1,7 +1,7 @@
 package com.rrgmc.peopleface.ui.crop
 
 import android.graphics.Bitmap
-import android.net.Uri
+import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -13,22 +13,21 @@ import com.rrgmc.peopleface.PeopleFaceApp
 import com.rrgmc.peopleface.image.Box
 import com.rrgmc.peopleface.image.CropMath
 import com.rrgmc.peopleface.image.ImageUtils
-import com.rrgmc.peopleface.ui.common.cameraDir
+import com.rrgmc.peopleface.ui.common.pickedFile
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.io.File
 
 /**
  * Holds the source picture while cutting faces out of it. Only the cropped faces are stored;
- * the source picture is dropped (and deleted if it was a temporary camera shot) when leaving.
+ * the temporary copy of the source picture is deleted when leaving.
  */
 class CropViewModel(
     private val app: PeopleFaceApp,
-    private val uri: Uri,
-    private val temporary: Boolean,
+    fileName: String,
     personId: Long,
 ) : ViewModel() {
+    private val file = pickedFile(app, fileName)
     private val repo = app.container.repository
     private var bitmap: Bitmap? = null
 
@@ -48,7 +47,8 @@ class CropViewModel(
         private set
     var loading by mutableStateOf(true)
         private set
-    var error by mutableStateOf(false)
+    /** Why the picture could not be opened, or null. */
+    var error by mutableStateOf<String?>(null)
         private set
     var saving by mutableStateOf(false)
         private set
@@ -61,7 +61,7 @@ class CropViewModel(
     init {
         viewModelScope.launch {
             try {
-                val bmp = withContext(Dispatchers.IO) { ImageUtils.decode(app, uri) }
+                val bmp = withContext(Dispatchers.IO) { ImageUtils.decode(file) }
                 bitmap = bmp
                 imageWidth = bmp.width
                 imageHeight = bmp.height
@@ -72,8 +72,9 @@ class CropViewModel(
                     emptyList()
                 }
                 if (faces.isNotEmpty()) selectFace(0) else crop = CropMath.defaultCrop(imageWidth, imageHeight)
-            } catch (e: Exception) {
-                error = true
+            } catch (e: Throwable) {
+                Log.e("PeopleFace", "Cannot open ${file.name}", e)
+                error = e.message ?: e.javaClass.simpleName
             } finally {
                 loading = false
             }
@@ -132,6 +133,6 @@ class CropViewModel(
 
     override fun onCleared() {
         bitmap = null
-        if (temporary) uri.lastPathSegment?.let { File(cameraDir(app), it).delete() }
+        file.delete()
     }
 }

@@ -13,6 +13,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.rrgmc.peopleface.data.AppContainer
+import com.rrgmc.peopleface.ui.addpeople.AddPeopleScreen
 import com.rrgmc.peopleface.ui.crop.FaceCropScreen
 import com.rrgmc.peopleface.ui.families.FamilyListScreen
 import com.rrgmc.peopleface.ui.family.FamilyDetailScreen
@@ -45,9 +46,15 @@ object Routes {
     fun person(id: Long) = "person/$id"
     fun quiz(groupId: Long = 0) = "quiz?groupId=$groupId"
 
-    /** Crop a face for [personId], or (with [familyId]) for any member of a family from a group photo. */
-    fun crop(uri: Uri, temporary: Boolean, personId: Long = 0, familyId: Long = 0) =
-        "crop?uri=${Uri.encode(uri.toString())}&temp=$temporary&personId=$personId&familyId=$familyId"
+    /** Add several people to [familyId], or to a new family in [groupId] when [familyId] is 0. */
+    fun addPeople(groupId: Long, familyId: Long = 0) = "addPeople?groupId=$groupId&familyId=$familyId"
+
+    /**
+     * Crop a face for [personId], or (with [familyId]) for any member of a family from a group photo.
+     * [fileName] is a temporary copy of the picture in the app's cache (see rememberPhotoSource).
+     */
+    fun crop(fileName: String, personId: Long = 0, familyId: Long = 0) =
+        "crop?file=${Uri.encode(fileName)}&personId=$personId&familyId=$familyId"
 }
 
 @Composable
@@ -71,6 +78,32 @@ private fun AppNavigation() {
                 onOpenFamily = { id -> nav.navigate(Routes.family(id)) },
                 onOpenPerson = { id -> nav.navigate(Routes.person(id)) },
                 onQuiz = { id -> nav.navigate(Routes.quiz(id)) },
+                onNewFamily = { groupId -> nav.navigate(Routes.addPeople(groupId)) },
+            )
+        }
+        composable(
+            "addPeople?groupId={groupId}&familyId={familyId}",
+            listOf(
+                navArgument("groupId") { type = NavType.LongType; defaultValue = 0L },
+                navArgument("familyId") { type = NavType.LongType; defaultValue = 0L },
+            ),
+        ) {
+            val args = it.arguments!!
+            val familyId = args.getLong("familyId")
+            AddPeopleScreen(
+                groupId = args.getLong("groupId"),
+                familyId = familyId,
+                onBack = back,
+                onSaved = { savedFamilyId ->
+                    if (familyId == 0L && savedFamilyId != null) {
+                        // New family: show it, and don't come back to this form.
+                        nav.navigate(Routes.family(savedFamilyId)) {
+                            popUpTo(it.destination.id) { inclusive = true }
+                        }
+                    } else {
+                        nav.popBackStack()
+                    }
+                },
             )
         }
         composable("family/{id}", listOf(navArgument("id") { type = NavType.LongType })) {
@@ -79,7 +112,8 @@ private fun AppNavigation() {
                 familyId = familyId,
                 onBack = back,
                 onOpenPerson = { id -> nav.navigate(Routes.person(id)) },
-                onCropGroupPhoto = { uri, temp -> nav.navigate(Routes.crop(uri, temp, familyId = familyId)) },
+                onAddPeople = { groupId -> nav.navigate(Routes.addPeople(groupId, familyId)) },
+                onCropGroupPhoto = { file -> nav.navigate(Routes.crop(file, familyId = familyId)) },
             )
         }
         composable("person/{id}", listOf(navArgument("id") { type = NavType.LongType })) {
@@ -87,22 +121,20 @@ private fun AppNavigation() {
             PersonDetailScreen(
                 personId = personId,
                 onBack = back,
-                onCrop = { uri, temp -> nav.navigate(Routes.crop(uri, temp, personId = personId)) },
+                onCrop = { file -> nav.navigate(Routes.crop(file, personId = personId)) },
             )
         }
         composable(
-            "crop?uri={uri}&temp={temp}&personId={personId}&familyId={familyId}",
+            "crop?file={file}&personId={personId}&familyId={familyId}",
             listOf(
-                navArgument("uri") { type = NavType.StringType },
-                navArgument("temp") { type = NavType.BoolType; defaultValue = false },
+                navArgument("file") { type = NavType.StringType },
                 navArgument("personId") { type = NavType.LongType; defaultValue = 0L },
                 navArgument("familyId") { type = NavType.LongType; defaultValue = 0L },
             ),
         ) {
             val args = it.arguments!!
             FaceCropScreen(
-                uri = Uri.parse(args.getString("uri")!!),
-                temporary = args.getBoolean("temp"),
+                fileName = args.getString("file")!!,
                 personId = args.getLong("personId"),
                 familyId = args.getLong("familyId"),
                 onDone = back,

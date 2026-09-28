@@ -1,6 +1,5 @@
 package com.rrgmc.peopleface.ui.person
 
-import android.net.Uri
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -64,7 +63,7 @@ import kotlinx.coroutines.launch
 fun PersonDetailScreen(
     personId: Long,
     onBack: () -> Unit,
-    onCrop: (Uri, Boolean) -> Unit,
+    onCrop: (fileName: String) -> Unit,
 ) {
     val repo = appContainer().repository
     val scope = rememberCoroutineScope()

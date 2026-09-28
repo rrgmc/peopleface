@@ -1,6 +1,5 @@
 package com.rrgmc.peopleface.ui.crop
 
-import android.net.Uri
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGestures
@@ -86,14 +85,13 @@ private const val DRAG_RESIZE = 2
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FaceCropScreen(
-    uri: Uri,
-    temporary: Boolean,
+    fileName: String,
     personId: Long,
     familyId: Long,
     onDone: () -> Unit,
 ) {
     val app = LocalContext.current.applicationContext as PeopleFaceApp
-    val vm: CropViewModel = viewModel { CropViewModel(app, uri, temporary, personId) }
+    val vm: CropViewModel = viewModel { CropViewModel(app, fileName, personId) }
     val groupMode = familyId != 0L
     val members by remember(familyId) {
         if (groupMode) app.container.repository.observePersonsInFamily(familyId) else flowOf(emptyList())
@@ -125,12 +123,19 @@ fun FaceCropScreen(
             ) {
                 when {
                     vm.loading -> CircularProgressIndicator()
-                    vm.error -> Text(
-                        stringResource(R.string.image_load_error),
-                        color = Color.White,
-                        textAlign = TextAlign.Center,
+                    vm.error != null -> Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
                         modifier = Modifier.padding(24.dp),
-                    )
+                    ) {
+                        Text(stringResource(R.string.image_load_error), color = Color.White, textAlign = TextAlign.Center)
+                        Text(
+                            vm.error.orEmpty(),
+                            color = Color.White.copy(alpha = 0.7f),
+                            style = MaterialTheme.typography.bodySmall,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.padding(top = 8.dp),
+                        )
+                    }
                     else -> CropCanvas(vm)
                 }
             }
@@ -138,7 +143,7 @@ fun FaceCropScreen(
                 Modifier.fillMaxWidth().padding(12.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                if (!vm.loading && !vm.error) {
+                if (!vm.loading && vm.error == null) {
                     Text(
                         if (vm.faces.isEmpty()) stringResource(R.string.no_faces_found)
                         else pluralStringResource(R.plurals.faces_found, vm.faces.size, vm.faces.size) +

@@ -62,6 +62,7 @@ fun FamilyListScreen(
     onOpenFamily: (Long) -> Unit,
     onOpenPerson: (Long) -> Unit,
     onQuiz: (Long) -> Unit,
+    onNewFamily: (groupId: Long) -> Unit,
 ) {
     val repo = appContainer().repository
     val scope = rememberCoroutineScope()
@@ -71,7 +72,6 @@ fun FamilyListScreen(
     val membersByFamily = remember(persons) { persons.groupBy { it.person.familyId } }
 
     var menu by remember { mutableStateOf(false) }
-    var adding by rememberSaveable { mutableStateOf(false) }
     var editing by rememberSaveable { mutableStateOf(false) }
     var deleting by rememberSaveable { mutableStateOf(false) }
 
@@ -106,7 +106,7 @@ fun FamilyListScreen(
         },
         floatingActionButton = {
             ExtendedFloatingActionButton(
-                onClick = { adding = true },
+                onClick = { onNewFamily(groupId) },
                 icon = { Icon(Icons.Default.Add, null) },
                 text = { Text(stringResource(R.string.new_family)) },
             )
@@ -145,15 +145,6 @@ fun FamilyListScreen(
         }
     }
 
-    if (adding) {
-        NameNotesDialog(
-            title = stringResource(R.string.new_family),
-            nameLabel = stringResource(R.string.family_name_hint),
-            nameRequired = false,
-            onSave = { name, notes -> scope.launch { onOpenFamily(repo.addFamily(groupId, name, notes)) } },
-            onDismiss = { adding = false },
-        )
-    }
     val g = group
     if (editing && g != null) {
         NameNotesDialog(

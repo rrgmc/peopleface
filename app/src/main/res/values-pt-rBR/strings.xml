@@ -12,6 +12,7 @@
     <string name="notes">Anotações</string>
     <string name="search">Buscar</string>
     <string name="quiz">Quiz</string>
+    <string name="more_options">Mais opções</string>
     <string name="settings">Configurações</string>
 
     <!-- Roles -->
@@ -46,8 +47,9 @@
     <string name="family_unnamed">Família sem nome</string>
     <string name="families_empty">Nenhuma família ainda. Uma família também pode ser uma única pessoa.</string>
     <string name="family_empty">Adicione as pessoas desta família: pai, mãe, filhos…</string>
-    <string name="add_kid">Adicionar filho(a)</string>
-    <string name="add_person">Adicionar pessoa</string>
+    <string name="add_people">Adicionar pessoas</string>
+    <string name="add_people_hint">Preencha os nomes que você sabe. Linhas vazias são ignoradas.</string>
+    <string name="remove">Remover</string>
     <string name="faces_from_group_photo">Rostos de uma foto</string>
     <string name="move_up">Mover para cima</string>
     <string name="move_down">Mover para baixo</string>

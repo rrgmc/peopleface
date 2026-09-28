@@ -1,12 +1,13 @@
 package com.rrgmc.peopleface.image
 
-import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.ImageDecoder
 import android.graphics.Matrix
-import android.net.Uri
+import android.os.Build
 import androidx.exifinterface.media.ExifInterface
 import java.io.ByteArrayOutputStream
+import java.io.File
 import java.io.IOException
 import kotlin.math.roundToInt
 
@@ -20,27 +21,25 @@ object ImageUtils {
     /** Side of the stored thumbnail used in lists. */
     const val THUMB_SIDE = 192
 
-    /** Decodes [uri] downsampled and upright (EXIF orientation applied). */
-    fun decode(context: Context, uri: Uri, maxSide: Int = SOURCE_MAX_SIDE): Bitmap {
-        val resolver = context.contentResolver
-        val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
-        resolver.openInputStream(uri)?.use { BitmapFactory.decodeStream(it, null, bounds) }
-            ?: throw IOException("Cannot open image")
-        if (bounds.outWidth <= 0 || bounds.outHeight <= 0) throw IOException("Not an image")
-
-        val opts = BitmapFactory.Options().apply {
-            inSampleSize = CropMath.sampleSize(bounds.outWidth, bounds.outHeight, maxSide)
+    /** Decodes [file] downsampled and upright (EXIF orientation applied), as a software bitmap. */
+    fun decode(file: File, maxSide: Int = SOURCE_MAX_SIDE): Bitmap {
+        var bitmap = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            // Handles HEIF/HEIC and applies the EXIF orientation itself.
+            ImageDecoder.decodeBitmap(ImageDecoder.createSource(file)) { decoder, info, _ ->
+                decoder.allocator = ImageDecoder.ALLOCATOR_SOFTWARE
+                val longest = maxOf(info.size.width, info.size.height)
+                if (longest > maxSide) {
+                    val scale = maxSide.toFloat() / longest
+                    decoder.setTargetSize(
+                        (info.size.width * scale).roundToInt().coerceAtLeast(1),
+                        (info.size.height * scale).roundToInt().coerceAtLeast(1),
+                    )
+                }
+            }
+        } else {
+            decodeLegacy(file, maxSide)
         }
-        var bitmap = resolver.openInputStream(uri)?.use { BitmapFactory.decodeStream(it, null, opts) }
-            ?: throw IOException("Cannot decode image")
-
-        val orientation = resolver.openInputStream(uri)?.use {
-            ExifInterface(it).getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL)
-        } ?: ExifInterface.ORIENTATION_NORMAL
-        val matrix = orientationMatrix(orientation)
-        if (matrix != null) {
-            bitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
-        }
+        if (bitmap.config != Bitmap.Config.ARGB_8888) bitmap = bitmap.copy(Bitmap.Config.ARGB_8888, false)
 
         // Final exact downscale if the power-of-two sampling left it larger than wanted.
         val longest = maxOf(bitmap.width, bitmap.height)
@@ -51,6 +50,21 @@ object ImageUtils {
             )
         }
         return bitmap
+    }
+
+    /** Android 8: BitmapFactory plus manual EXIF rotation. */
+    private fun decodeLegacy(file: File, maxSide: Int): Bitmap {
+        val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        BitmapFactory.decodeFile(file.path, bounds)
+        if (bounds.outWidth <= 0 || bounds.outHeight <= 0) throw IOException("Unsupported image format")
+        val opts = BitmapFactory.Options().apply {
+            inSampleSize = CropMath.sampleSize(bounds.outWidth, bounds.outHeight, maxSide)
+        }
+        val bitmap = BitmapFactory.decodeFile(file.path, opts) ?: throw IOException("Cannot decode image")
+        val orientation = ExifInterface(file.path)
+            .getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL)
+        val matrix = orientationMatrix(orientation) ?: return bitmap
+        return Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
     }
 
     private fun orientationMatrix(orientation: Int): Matrix? {

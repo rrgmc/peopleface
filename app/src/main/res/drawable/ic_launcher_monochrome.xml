@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Single-colour version for themed icons (Android 13+); only the alpha is used. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <group
+        android:pivotX="54"
+        android:pivotY="54"
+        android:scaleX="0.8"
+        android:scaleY="0.8"
+        android:translateY="1">
+        <!-- people behind, lighter -->
+        <path
+            android:fillAlpha="0.5"
+            android:fillColor="#FFFFFF"
+            android:pathData="M33,24a9,9 0,1 1,0 18a9,9 0,1 1,0 -18zM18,66C18,48.8 24.75,44.5 33,44.5C41.25,44.5 48,48.8 48,66Z" />
+        <!-- child: drop the part hidden behind the person in front (no gaps in a one-colour icon) -->
+        <group>
+            <clip-path android:pathData="M0,0H108V108H72V60.5L66,56.5H0Z" />
+            <path
+                android:fillAlpha="0.5"
+                android:fillColor="#FFFFFF"
+                android:pathData="M76,38a6,6 0,1 1,0 12a6,6 0,1 1,0 -12zM65.5,66C65.5,55.2 70.225,52.5 76,52.5C81.775,52.5 86.5,55.2 86.5,66Z" />
+        </group>
+        <!-- person in front, with the name tag cut out -->
+        <path
+            android:fillColor="#FFFFFF"
+            android:fillType="evenOdd"
+            android:pathData="M53,34a9.5,9.5 0,1 1,0 19a9.5,9.5 0,1 1,0 -19zM35.5,77C35.5,59.8 43.375,55.5 53,55.5C62.625,55.5 70.5,59.8 70.5,77ZM56.5,64.5h10a2.5,2.5 0,0 1,2.5,2.5v6a2.5,2.5 0,0 1,-2.5,2.5h-10a2.5,2.5 0,0 1,-2.5,-2.5v-6a2.5,2.5 0,0 1,2.5,-2.5zM57.115,69.67h8.77a0.715,0.715 0,0 1,0.715,0.715v0a0.715,0.715 0,0 1,-0.715,0.715h-8.77a0.715,0.715 0,0 1,-0.715,-0.715v-0a0.715,0.715 0,0 1,0.715,-0.715zM57.115,72.31h4.87a0.715,0.715 0,0 1,0.715,0.715v0a0.715,0.715 0,0 1,-0.715,0.715h-4.87a0.715,0.715 0,0 1,-0.715,-0.715v-0a0.715,0.715 0,0 1,0.715,-0.715z" />
+    </group>
+</vector>

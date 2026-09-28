@@ -53,6 +53,22 @@ class Repository(private val db: AppDatabase) {
             )
         }
 
+    /** A person to be added; blank names are skipped by [addPeople]. */
+    data class NewPerson(val name: String, val role: Role, val roleLabel: String = "")
+
+    /**
+     * Adds all non-blank [people] in order. With [familyId] 0 a new family is created in [groupId]
+     * (only if there is a name or at least one person). Returns the family id, or null if nothing was added.
+     */
+    suspend fun addPeople(groupId: Long, familyId: Long, familyName: String, people: List<NewPerson>): Long? =
+        db.withTransaction {
+            val toAdd = people.filter { it.name.isNotBlank() }
+            if (familyId == 0L && toAdd.isEmpty() && familyName.isBlank()) return@withTransaction null
+            val id = if (familyId != 0L) familyId else addFamily(groupId, familyName)
+            toAdd.forEach { addPerson(id, it.name, it.role, it.roleLabel) }
+            id
+        }
+
     suspend fun updatePerson(person: PersonEntity) = persons.update(
         person.copy(
             name = person.name.trim(),
