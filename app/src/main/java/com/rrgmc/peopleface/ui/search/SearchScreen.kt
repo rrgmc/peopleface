@@ -48,7 +48,7 @@ fun normalizeForSearch(s: String): String =
 /** Every word of the query must appear in one of the person's texts; [extra] is e.g. the family label. */
 fun PersonRow.matches(normalizedQuery: String, extra: String = ""): Boolean =
     normalizedQuery.split(' ').filter { it.isNotBlank() }.all { term ->
-        listOf(person.name, person.notes, familyName, groupName, extra)
+        listOf(person.name, person.notes, familyName, groupName, tagName.orEmpty(), extra)
             .any { normalizeForSearch(it).contains(term) }
     }
 

@@ -5,10 +5,12 @@ Android app to remember people's names.
 - **Groups**: where people are from (kid's school, club A, club B…).
 - **Families** inside a group: father, mother, any number of kids, or other people (grandma, nanny…).
   A family can be a single person, and the family name is optional.
+- **Tags**: short colored labels defined per group (group menu → Tags). A family can have one tag, shown
+  next to its name, or on the person's picture for people on their own.
 - **People** have a thumbnail and multiple photos. Each photo is a face cut from a larger picture:
   the app detects faces on-device (ML Kit, works offline), you tap the person you want and adjust the square if needed.
   With **Faces from a photo** on a family screen, you can cut every family member out of a single group picture.
-- **Search** across names, families, groups and notes (ignores accents).
+- **Search** across names, families, groups, tags and notes (ignores accents).
 - **Quiz**: multiple choice or flashcards, per group or across all groups.
 - **Backup**: everything, including photos, lives in one SQLite file (`peopleface.db`).
   Settings → Export / Import database.
@@ -32,10 +34,10 @@ from the repository's Releases page, including from a phone.
 
 ```
 app/src/main/java/com/rrgmc/peopleface/
-  data/db/        Room entities, DAOs, database (origin_groups, families, persons, photos)
+  data/db/        Room entities, DAOs, database (origin_groups, families, persons, photos, tags)
   data/           Repository, BackupManager, AppContainer
   image/          FaceDetector (ML Kit), CropMath, ImageUtils
-  ui/             Compose screens: groups, families, family, person, crop, search, quiz, settings
+  ui/             Compose screens: groups, families, family, person, tags, crop, search, quiz, settings
 ```
 
 ## Signing

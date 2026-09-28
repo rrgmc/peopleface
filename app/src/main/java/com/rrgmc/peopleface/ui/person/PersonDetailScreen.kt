@@ -57,6 +57,7 @@ import com.rrgmc.peopleface.ui.common.ConfirmDialog
 import com.rrgmc.peopleface.ui.common.PersonDialog
 import com.rrgmc.peopleface.ui.common.PhotoSourceMenu
 import com.rrgmc.peopleface.ui.common.rememberPhotoSource
+import com.rrgmc.peopleface.ui.common.TagChip
 import com.rrgmc.peopleface.ui.common.roleText
 import kotlinx.coroutines.launch
 
@@ -119,6 +120,9 @@ fun PersonDetailScreen(
                         style = MaterialTheme.typography.bodyMedium,
                         textAlign = TextAlign.Center,
                     )
+                    if (r.tagName != null && r.tagColor != null) {
+                        TagChip(r.tagName, r.tagColor, Modifier.padding(top = 4.dp))
+                    }
                     // Also the way to reach one-person families, which have no card of their own.
                     AssistChip(
                         onClick = { onOpenFamily(p.familyId) },

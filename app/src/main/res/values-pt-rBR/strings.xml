@@ -133,4 +133,17 @@
     <string name="import_done_title">Banco de dados restaurado</string>
     <string name="import_done_text">O app será reiniciado para carregar os dados restaurados.</string>
     <string name="restart">Reiniciar</string>
+
+    <!-- Tags -->
+    <string name="tags">Etiquetas</string>
+    <string name="tag">Etiqueta</string>
+    <string name="new_tag">Nova etiqueta</string>
+    <string name="edit_tag">Editar etiqueta</string>
+    <string name="tag_name_hint">Nome curto</string>
+    <string name="tag_color">Cor</string>
+    <string name="no_tag">Sem etiqueta</string>
+    <string name="manage_tags">Gerenciar etiquetas</string>
+    <string name="tags_empty">Nenhuma etiqueta ainda. Etiquetas são rótulos curtos e coloridos que você pode colocar nas famílias deste grupo.</string>
+    <string name="delete_tag_title">Excluir etiqueta?</string>
+    <string name="delete_tag_text">A etiqueta \"%1$s\" será removida de todas as famílias que a têm.</string>
 </resources>

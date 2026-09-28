@@ -131,4 +131,17 @@
     <string name="import_done_title">Database restored</string>
     <string name="import_done_text">The app will restart to load the restored data.</string>
     <string name="restart">Restart</string>
+
+    <!-- Tags -->
+    <string name="tags">Tags</string>
+    <string name="tag">Tag</string>
+    <string name="new_tag">New tag</string>
+    <string name="edit_tag">Edit tag</string>
+    <string name="tag_name_hint">Short name</string>
+    <string name="tag_color">Color</string>
+    <string name="no_tag">No tag</string>
+    <string name="manage_tags">Manage tags</string>
+    <string name="tags_empty">No tags yet. Tags are short colored labels you can put on the families of this group.</string>
+    <string name="delete_tag_title">Delete tag?</string>
+    <string name="delete_tag_text">The tag \"%1$s\" will be removed from all families that have it.</string>
 </resources>

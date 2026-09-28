@@ -16,8 +16,9 @@ data class GroupEntity(
     @ColumnInfo(name = "created_at") val createdAt: Long = System.currentTimeMillis(),
 )
 
+/** A short colored label that can be put on families of a group, e.g. "Bus" or "Class B". */
 @Entity(
-    tableName = "families",
+    tableName = "tags",
     foreignKeys = [ForeignKey(
         entity = GroupEntity::class,
         parentColumns = ["id"],
@@ -26,12 +27,41 @@ data class GroupEntity(
     )],
     indices = [Index("group_id")],
 )
+data class TagEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    @ColumnInfo(name = "group_id") val groupId: Long,
+    val name: String,
+    /** Background color, ARGB. */
+    val color: Int,
+    @ColumnInfo(name = "created_at") val createdAt: Long = System.currentTimeMillis(),
+)
+
+@Entity(
+    tableName = "families",
+    foreignKeys = [
+        ForeignKey(
+            entity = GroupEntity::class,
+            parentColumns = ["id"],
+            childColumns = ["group_id"],
+            onDelete = ForeignKey.CASCADE,
+        ),
+        ForeignKey(
+            entity = TagEntity::class,
+            parentColumns = ["id"],
+            childColumns = ["tag_id"],
+            onDelete = ForeignKey.SET_NULL,
+        ),
+    ],
+    indices = [Index("group_id"), Index("tag_id")],
+)
 data class FamilyEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     @ColumnInfo(name = "group_id") val groupId: Long,
     /** Optional, e.g. "Silva". When blank the member names are shown instead. */
     val name: String = "",
     val notes: String = "",
+    /** Optional tag of the same group (database v3). */
+    @ColumnInfo(name = "tag_id") val tagId: Long? = null,
     @ColumnInfo(name = "created_at") val createdAt: Long = System.currentTimeMillis(),
 )
 
@@ -88,17 +118,20 @@ data class GroupWithCounts(
     @ColumnInfo(name = "person_count") val personCount: Int,
 )
 
-/** A person together with the small thumbnail image and the names of its family and group. */
+/** A person together with the small thumbnail image, the names of its family and group and the family tag. */
 data class PersonRow(
     @Embedded val person: PersonEntity,
     val thumb: ByteArray?,
     @ColumnInfo(name = "family_name") val familyName: String,
     @ColumnInfo(name = "group_id") val groupId: Long,
     @ColumnInfo(name = "group_name") val groupName: String,
+    @ColumnInfo(name = "tag_name") val tagName: String? = null,
+    @ColumnInfo(name = "tag_color") val tagColor: Int? = null,
 ) {
     override fun equals(other: Any?) =
         other is PersonRow && other.person == person && other.familyName == familyName &&
-            other.groupName == groupName && other.thumb.contentEquals(thumb)
+            other.groupName == groupName && other.tagName == tagName && other.tagColor == tagColor &&
+            other.thumb.contentEquals(thumb)
 
     override fun hashCode() = person.hashCode()
 }

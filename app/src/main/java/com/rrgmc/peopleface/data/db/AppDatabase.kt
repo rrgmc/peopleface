@@ -8,8 +8,8 @@ import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
 @Database(
-    entities = [GroupEntity::class, FamilyEntity::class, PersonEntity::class, PhotoEntity::class],
-    version = 2,
+    entities = [GroupEntity::class, FamilyEntity::class, PersonEntity::class, PhotoEntity::class, TagEntity::class],
+    version = 3,
     exportSchema = true,
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -17,6 +17,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun familyDao(): FamilyDao
     abstract fun personDao(): PersonDao
     abstract fun photoDao(): PhotoDao
+    abstract fun tagDao(): TagDao
 
     companion object {
         const val FILE_NAME = "peopleface.db"
@@ -42,11 +43,29 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        /** Tags: a table of per-group tags and an optional tag on each family. */
+        val MIGRATION_2_3 = object : Migration(2, 3) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `tags` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                        "`group_id` INTEGER NOT NULL, `name` TEXT NOT NULL, `color` INTEGER NOT NULL, " +
+                        "`created_at` INTEGER NOT NULL, FOREIGN KEY(`group_id`) REFERENCES `origin_groups`(`id`) " +
+                        "ON UPDATE NO ACTION ON DELETE CASCADE )"
+                )
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_tags_group_id` ON `tags` (`group_id`)")
+                db.execSQL(
+                    "ALTER TABLE `families` ADD COLUMN `tag_id` INTEGER DEFAULT NULL " +
+                        "REFERENCES `tags`(`id`) ON UPDATE NO ACTION ON DELETE SET NULL"
+                )
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_families_tag_id` ON `families` (`tag_id`)")
+            }
+        }
+
         fun create(context: Context): AppDatabase =
             Room.databaseBuilder(context, AppDatabase::class.java, FILE_NAME)
                 // No -wal/-shm side files: the .db file alone is always a complete backup.
                 .setJournalMode(JournalMode.TRUNCATE)
-                .addMigrations(MIGRATION_1_2)
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
                 .build()
     }
 }
