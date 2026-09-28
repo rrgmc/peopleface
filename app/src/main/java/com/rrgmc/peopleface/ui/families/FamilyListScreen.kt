@@ -236,7 +236,7 @@ private fun FamilyCard(
                             horizontalAlignment = Alignment.CenterHorizontally,
                             modifier = Modifier.width(72.dp).clickable { onPersonClick(m.person.id) },
                         ) {
-                            Avatar(m.thumb, size = 64.dp)
+                            Avatar(m.thumb, m.person.role, size = 64.dp)
                             Text(
                                 m.person.name,
                                 style = MaterialTheme.typography.labelMedium,

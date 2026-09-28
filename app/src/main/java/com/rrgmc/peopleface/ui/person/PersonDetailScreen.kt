@@ -57,6 +57,7 @@ import com.rrgmc.peopleface.ui.common.ConfirmDialog
 import com.rrgmc.peopleface.ui.common.PersonDialog
 import com.rrgmc.peopleface.ui.common.PhotoSourceMenu
 import com.rrgmc.peopleface.ui.common.rememberPhotoSource
+import com.rrgmc.peopleface.ui.common.roleIcon
 import com.rrgmc.peopleface.ui.common.roleText
 import kotlinx.coroutines.launch
 
@@ -111,6 +112,7 @@ fun PersonDetailScreen(
                         key = p.thumbnailPhotoId ?: 0L,
                         modifier = Modifier.size(200.dp).clip(CircleShape),
                         contentDescription = p.name,
+                        placeholder = roleIcon(p.role),
                     ) { p.thumbnailPhotoId?.let { repo.photoImage(it) } }
                     Text(p.name, style = MaterialTheme.typography.headlineMedium, modifier = Modifier.padding(top = 12.dp))
                     Text(

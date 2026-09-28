@@ -98,7 +98,7 @@ fun SearchScreen(onBack: () -> Unit, onOpenPerson: (Long) -> Unit) {
                 val details = listOf(roleText(row.person), labels[row.person.id].orEmpty(), row.groupName)
                     .filter { it.isNotBlank() }
                 ListItem(
-                    leadingContent = { Avatar(row.thumb) },
+                    leadingContent = { Avatar(row.thumb, row.person.role) },
                     headlineContent = { Text(row.person.name) },
                     supportingContent = { Text(details.joinToString(" · ")) },
                     modifier = Modifier.clickable { onOpenPerson(row.person.id) },

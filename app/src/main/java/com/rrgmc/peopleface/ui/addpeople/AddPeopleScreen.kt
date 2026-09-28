@@ -47,6 +47,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.rrgmc.peopleface.R
 import com.rrgmc.peopleface.appContainer
 import com.rrgmc.peopleface.data.db.Role
+import com.rrgmc.peopleface.ui.common.roleIcon
 import com.rrgmc.peopleface.ui.common.roleText
 
 /**
@@ -161,7 +162,7 @@ private fun RoleSelector(role: Role, onSelect: (Role) -> Unit) {
         modifier = Modifier.width(112.dp),
     ) {
         Icon(
-            if (role == Role.ADULT) Icons.Default.Person else Icons.Default.ChildCare,
+            roleIcon(role),
             null,
             Modifier.padding(end = 6.dp).size(18.dp),
         )

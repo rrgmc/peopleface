@@ -141,7 +141,7 @@ fun FamilyDetailScreen(
                 val p = row.person
                 val kidIndex = kids.indexOfFirst { it.person.id == p.id }
                 ListItem(
-                    leadingContent = { Avatar(row.thumb, size = 56.dp) },
+                    leadingContent = { Avatar(row.thumb, row.person.role, size = 56.dp) },
                     headlineContent = { Text(p.name) },
                     supportingContent = {
                         val role = roleText(p)
