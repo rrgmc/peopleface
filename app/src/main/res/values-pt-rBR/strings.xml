@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Common -->
+    <string name="back">Voltar</string>
+    <string name="edit">Editar</string>
+    <string name="delete">Excluir</string>
+    <string name="save">Salvar</string>
+    <string name="cancel">Cancelar</string>
+    <string name="done">Concluir</string>
+    <string name="next">Próximo</string>
+    <string name="name">Nome</string>
+    <string name="notes">Anotações</string>
+    <string name="search">Buscar</string>
+    <string name="quiz">Quiz</string>
+    <string name="settings">Configurações</string>
+
+    <!-- Roles -->
+    <string name="role_father">Pai</string>
+    <string name="role_mother">Mãe</string>
+    <string name="role_kid">Filho(a)</string>
+    <string name="role_other">Outro</string>
+    <string name="role_label_hint">Papel (avó, babá…)</string>
+
+    <!-- Groups -->
+    <string name="new_group">Novo grupo</string>
+    <string name="edit_group">Editar grupo</string>
+    <string name="group_name_hint">De onde são (escola, clube…)</string>
+    <string name="groups_empty">Crie um grupo para cada lugar onde você conhece pessoas: a escola do seu filho, um clube, o trabalho…</string>
+    <string name="delete_group_title">Excluir grupo?</string>
+    <string name="delete_group_text">\"%1$s\" e todas as suas famílias, pessoas e fotos serão excluídas.</string>
+    <plurals name="families_count">
+        <item quantity="one">%d família</item>
+        <item quantity="many">%d famílias</item>
+        <item quantity="other">%d famílias</item>
+    </plurals>
+    <plurals name="people_count">
+        <item quantity="one">%d pessoa</item>
+        <item quantity="many">%d pessoas</item>
+        <item quantity="other">%d pessoas</item>
+    </plurals>
+
+    <!-- Families -->
+    <string name="new_family">Nova família</string>
+    <string name="edit_family">Editar família</string>
+    <string name="family_name_hint">Nome da família (opcional)</string>
+    <string name="family_unnamed">Família sem nome</string>
+    <string name="families_empty">Nenhuma família ainda. Uma família também pode ser uma única pessoa.</string>
+    <string name="family_empty">Adicione as pessoas desta família: pai, mãe, filhos…</string>
+    <string name="add_kid">Adicionar filho(a)</string>
+    <string name="add_person">Adicionar pessoa</string>
+    <string name="faces_from_group_photo">Rostos de uma foto</string>
+    <string name="move_up">Mover para cima</string>
+    <string name="move_down">Mover para baixo</string>
+    <string name="delete_family_title">Excluir família?</string>
+    <string name="delete_family_text">\"%1$s\" e todas as suas pessoas e fotos serão excluídas.</string>
+
+    <!-- Person -->
+    <string name="edit_person">Editar pessoa</string>
+    <string name="photos_count">Fotos (%1$d)</string>
+    <string name="photos_empty">Nenhuma foto ainda. Adicione uma foto e o app recorta o rosto.</string>
+    <string name="add_photo">Adicionar foto</string>
+    <string name="thumbnail">Miniatura</string>
+    <string name="use_as_thumbnail">Usar como miniatura</string>
+    <string name="delete_person_title">Excluir pessoa?</string>
+    <string name="delete_person_text">%1$s e todas as suas fotos serão excluídas.</string>
+    <string name="from_gallery">Da galeria</string>
+    <string name="take_photo">Tirar foto</string>
+
+    <!-- Crop -->
+    <string name="crop_title">Recortar o rosto</string>
+    <string name="crop_group_title">Rostos de uma foto</string>
+    <string name="image_load_error">Não foi possível abrir esta imagem.</string>
+    <string name="no_faces_found">Nenhum rosto encontrado. Arraste o quadrado sobre a pessoa ou arraste um canto para redimensionar.</string>
+    <plurals name="faces_found">
+        <item quantity="one">%d rosto encontrado.</item>
+        <item quantity="many">%d rostos encontrados.</item>
+        <item quantity="other">%d rostos encontrados.</item>
+    </plurals>
+    <string name="crop_hint">Toque em um rosto para selecioná-lo. Arraste para mover, arraste um canto para redimensionar.</string>
+    <string name="who_is_this">Quem é?</string>
+    <string name="save_face">Salvar rosto</string>
+    <string name="photo_saved_for">Foto salva para %1$s</string>
+
+    <!-- Search -->
+    <string name="search_hint">Nome, família, grupo, anotações…</string>
+    <string name="no_results">Ninguém encontrado.</string>
+
+    <!-- Quiz -->
+    <string name="all_groups">Todos os grupos</string>
+    <string name="quiz_empty">Adicione fotos às pessoas para começar a praticar os nomes.</string>
+    <string name="quiz_mode_choices">Múltipla escolha</string>
+    <string name="quiz_mode_flashcard">Cartão</string>
+    <string name="show_name">Mostrar nome</string>
+    <string name="knew_it">Eu sabia</string>
+    <string name="didnt_know">Não sabia</string>
+
+    <!-- Settings / backup -->
+    <string name="backup_title">Backup</string>
+    <string name="backup_explanation">Tudo, inclusive as fotos, fica guardado em um único arquivo de banco de dados. Exporte-o para manter uma cópia (Drive, computador…) e importe-o para restaurar neste ou em outro celular.</string>
+    <string name="database_size">Tamanho do banco: %1$s</string>
+    <string name="export_db">Exportar banco de dados</string>
+    <string name="import_db">Importar banco de dados</string>
+    <string name="export_done">Banco de dados exportado.</string>
+    <string name="export_failed">Falha ao exportar.</string>
+    <string name="import_confirm">Todos os dados atuais serão substituídos pelo conteúdo do arquivo selecionado. Isso não pode ser desfeito.</string>
+    <string name="import_replace">Substituir</string>
+    <string name="import_invalid">Este arquivo não é um banco de dados do PeopleFace.</string>
+    <string name="import_failed">Falha ao importar.</string>
+    <string name="import_done_title">Banco de dados restaurado</string>
+    <string name="import_done_text">O app será reiniciado para carregar os dados restaurados.</string>
+    <string name="restart">Reiniciar</string>
+</resources>

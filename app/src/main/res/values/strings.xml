@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name" translatable="false">PeopleFace</string>
+
+    <!-- Common -->
+    <string name="back">Back</string>
+    <string name="edit">Edit</string>
+    <string name="delete">Delete</string>
+    <string name="save">Save</string>
+    <string name="cancel">Cancel</string>
+    <string name="done">Done</string>
+    <string name="next">Next</string>
+    <string name="name">Name</string>
+    <string name="notes">Notes</string>
+    <string name="search">Search</string>
+    <string name="quiz">Quiz</string>
+    <string name="settings">Settings</string>
+
+    <!-- Roles -->
+    <string name="role_father">Father</string>
+    <string name="role_mother">Mother</string>
+    <string name="role_kid">Kid</string>
+    <string name="role_other">Other</string>
+    <string name="role_label_hint">Role (grandma, nanny…)</string>
+
+    <!-- Groups -->
+    <string name="new_group">New group</string>
+    <string name="edit_group">Edit group</string>
+    <string name="group_name_hint">Where they are from (school, club…)</string>
+    <string name="groups_empty">Create a group for each place you meet people: your kid\'s school, a club, work…</string>
+    <string name="delete_group_title">Delete group?</string>
+    <string name="delete_group_text">\"%1$s\" and all its families, people and photos will be deleted.</string>
+    <plurals name="families_count">
+        <item quantity="one">%d family</item>
+        <item quantity="other">%d families</item>
+    </plurals>
+    <plurals name="people_count">
+        <item quantity="one">%d person</item>
+        <item quantity="other">%d people</item>
+    </plurals>
+
+    <!-- Families -->
+    <string name="new_family">New family</string>
+    <string name="edit_family">Edit family</string>
+    <string name="family_name_hint">Family name (optional)</string>
+    <string name="family_unnamed">Unnamed family</string>
+    <string name="families_empty">No families yet. A family can also be a single person.</string>
+    <string name="family_empty">Add the people of this family: father, mother, kids…</string>
+    <string name="add_kid">Add kid</string>
+    <string name="add_person">Add person</string>
+    <string name="faces_from_group_photo">Faces from a photo</string>
+    <string name="move_up">Move up</string>
+    <string name="move_down">Move down</string>
+    <string name="delete_family_title">Delete family?</string>
+    <string name="delete_family_text">\"%1$s\" and all its people and photos will be deleted.</string>
+
+    <!-- Person -->
+    <string name="edit_person">Edit person</string>
+    <string name="photos_count">Photos (%1$d)</string>
+    <string name="photos_empty">No photos yet. Add a photo and the app will cut out the face.</string>
+    <string name="add_photo">Add photo</string>
+    <string name="thumbnail">Thumbnail</string>
+    <string name="use_as_thumbnail">Use as thumbnail</string>
+    <string name="delete_person_title">Delete person?</string>
+    <string name="delete_person_text">%1$s and all their photos will be deleted.</string>
+    <string name="from_gallery">From gallery</string>
+    <string name="take_photo">Take photo</string>
+
+    <!-- Crop -->
+    <string name="crop_title">Cut out the face</string>
+    <string name="crop_group_title">Faces from a photo</string>
+    <string name="image_load_error">Could not open this image.</string>
+    <string name="no_faces_found">No face found. Drag the square over the person, or drag a corner to resize it.</string>
+    <plurals name="faces_found">
+        <item quantity="one">%d face found.</item>
+        <item quantity="other">%d faces found.</item>
+    </plurals>
+    <string name="crop_hint">Tap a face to select it. Drag to move, drag a corner to resize.</string>
+    <string name="who_is_this">Who is this?</string>
+    <string name="save_face">Save face</string>
+    <string name="photo_saved_for">Photo saved for %1$s</string>
+
+    <!-- Search -->
+    <string name="search_hint">Name, family, group, notes…</string>
+    <string name="no_results">Nobody found.</string>
+
+    <!-- Quiz -->
+    <string name="all_groups">All groups</string>
+    <string name="quiz_empty">Add photos to people to start practicing their names.</string>
+    <string name="quiz_mode_choices">Multiple choice</string>
+    <string name="quiz_mode_flashcard">Flashcard</string>
+    <string name="show_name">Show name</string>
+    <string name="knew_it">I knew it</string>
+    <string name="didnt_know">I didn\'t know</string>
+
+    <!-- Settings / backup -->
+    <string name="backup_title">Backup</string>
+    <string name="backup_explanation">Everything, including photos, is stored in a single database file. Export it to keep a copy (Drive, computer…) and import it to restore on this or another phone.</string>
+    <string name="database_size">Database size: %1$s</string>
+    <string name="export_db">Export database</string>
+    <string name="import_db">Import database</string>
+    <string name="export_done">Database exported.</string>
+    <string name="export_failed">Export failed.</string>
+    <string name="import_confirm">All current data will be replaced by the contents of the selected file. This cannot be undone.</string>
+    <string name="import_replace">Replace</string>
+    <string name="import_invalid">This file is not a PeopleFace database.</string>
+    <string name="import_failed">Import failed.</string>
+    <string name="import_done_title">Database restored</string>
+    <string name="import_done_text">The app will restart to load the restored data.</string>
+    <string name="restart">Restart</string>
+</resources>
