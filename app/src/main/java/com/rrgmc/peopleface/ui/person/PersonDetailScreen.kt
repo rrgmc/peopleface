@@ -23,8 +23,10 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AddAPhoto
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.FamilyRestroom
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.AssistChip
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
@@ -64,6 +66,7 @@ fun PersonDetailScreen(
     personId: Long,
     onBack: () -> Unit,
     onCrop: (fileNames: List<String>) -> Unit,
+    onOpenFamily: (familyId: Long) -> Unit,
 ) {
     val repo = appContainer().repository
     val scope = rememberCoroutineScope()
@@ -114,6 +117,12 @@ fun PersonDetailScreen(
                         listOf(roleText(p), r.familyName, r.groupName).filter { it.isNotBlank() }.joinToString(" · "),
                         style = MaterialTheme.typography.bodyMedium,
                         textAlign = TextAlign.Center,
+                    )
+                    // Also the way to reach one-person families, which have no card of their own.
+                    AssistChip(
+                        onClick = { onOpenFamily(p.familyId) },
+                        label = { Text(stringResource(R.string.open_family)) },
+                        leadingIcon = { Icon(Icons.Default.FamilyRestroom, null) },
                     )
                     if (p.notes.isNotBlank()) {
                         Text(

@@ -115,6 +115,9 @@ object Routes {
     /** Add several people to [familyId], or to a new family in [groupId] when [familyId] is 0. */
     fun addPeople(groupId: Long, familyId: Long = 0) = "addPeople?groupId=$groupId&familyId=$familyId"
 
+    /** Add several people to [groupId], each as their own one-person family. */
+    fun addIndividuals(groupId: Long) = "addPeople?groupId=$groupId&individuals=true"
+
     /**
      * Crop a face for [personId], or (with [familyId] / [groupId]) for anyone of that family / group.
      * [fileName] is a temporary copy of the picture in the app's cache (see rememberPhotoSource).
@@ -160,14 +163,16 @@ private fun AppNavigation(sharedFiles: List<String>, onSharedHandled: () -> Unit
                 onOpenPerson = { id -> nav.navigate(Routes.person(id)) },
                 onQuiz = { id -> nav.navigate(Routes.quiz(id)) },
                 onNewFamily = { groupId -> nav.navigate(Routes.addPeople(groupId)) },
+                onAddIndividuals = { groupId -> nav.navigate(Routes.addIndividuals(groupId)) },
                 onCropGroupPhoto = { groupId, files -> nav.navigate(Routes.crop(files, groupId = groupId)) },
             )
         }
         composable(
-            "addPeople?groupId={groupId}&familyId={familyId}",
+            "addPeople?groupId={groupId}&familyId={familyId}&individuals={individuals}",
             listOf(
                 navArgument("groupId") { type = NavType.LongType; defaultValue = 0L },
                 navArgument("familyId") { type = NavType.LongType; defaultValue = 0L },
+                navArgument("individuals") { type = NavType.BoolType; defaultValue = false },
             ),
         ) {
             val args = it.arguments!!
@@ -175,6 +180,7 @@ private fun AppNavigation(sharedFiles: List<String>, onSharedHandled: () -> Unit
             AddPeopleScreen(
                 groupId = args.getLong("groupId"),
                 familyId = familyId,
+                individuals = args.getBoolean("individuals"),
                 onBack = back,
                 onSaved = { savedFamilyId ->
                     if (familyId == 0L && savedFamilyId != null) {
@@ -204,6 +210,7 @@ private fun AppNavigation(sharedFiles: List<String>, onSharedHandled: () -> Unit
                 personId = personId,
                 onBack = back,
                 onCrop = { files -> nav.navigate(Routes.crop(files, personId = personId)) },
+                onOpenFamily = { id -> nav.navigate(Routes.family(id)) },
             )
         }
         composable(

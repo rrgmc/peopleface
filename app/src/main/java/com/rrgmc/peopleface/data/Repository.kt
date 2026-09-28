@@ -69,6 +69,13 @@ class Repository(private val db: AppDatabase) {
             id
         }
 
+    /** Adds each non-blank person as a one-person family (without a family name) in [groupId]. */
+    suspend fun addIndividuals(groupId: Long, people: List<NewPerson>): Int = db.withTransaction {
+        val toAdd = people.filter { it.name.isNotBlank() }
+        toAdd.forEach { addPerson(addFamily(groupId, ""), it.name, it.role, it.roleLabel) }
+        toAdd.size
+    }
+
     suspend fun updatePerson(person: PersonEntity) = persons.update(
         person.copy(
             name = person.name.trim(),
