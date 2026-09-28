@@ -12,11 +12,11 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ChildCare
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -30,9 +30,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardCapitalization
@@ -46,8 +46,23 @@ import kotlinx.coroutines.withContext
 
 fun ByteArray.toImageBitmap(): ImageBitmap? = BitmapFactory.decodeByteArray(this, 0, size)?.asImageBitmap()
 
-/** Placeholder picture for a person without a photo: a different figure for adults and children. */
-fun roleIcon(role: Role?): ImageVector = if (role == Role.CHILD) Icons.Default.ChildCare else Icons.Default.Person
+/**
+ * The person figure, full size for adults and smaller for children, standing on the same baseline
+ * (so a child looks shorter). Used as the picture of people without a photo and on the Adult/Child toggle.
+ */
+@Composable
+fun PersonFigure(role: Role?, modifier: Modifier = Modifier, tint: Color = LocalContentColor.current) {
+    val child = role == Role.CHILD
+    Box(modifier) {
+        Icon(
+            Icons.Default.Person, null,
+            Modifier
+                .fillMaxSize(if (child) 0.7f else 1f)
+                .align(if (child) Alignment.BottomCenter else Alignment.Center),
+            tint = tint,
+        )
+    }
+}
 
 /** Shows JPEG bytes (decoded synchronously; meant for small thumbnails). */
 @Composable
@@ -55,10 +70,10 @@ fun BlobImage(
     bytes: ByteArray?,
     modifier: Modifier = Modifier,
     contentDescription: String? = null,
-    placeholder: ImageVector = Icons.Default.Person,
+    role: Role? = null,
 ) {
     val bitmap = remember(bytes) { bytes?.toImageBitmap() }
-    ImageOrPlaceholder(bitmap, modifier, contentDescription, placeholder)
+    ImageOrPlaceholder(bitmap, modifier, contentDescription, role)
 }
 
 /** Loads a full-size image off the main thread and shows it. */
@@ -67,26 +82,24 @@ fun AsyncBlobImage(
     key: Any,
     modifier: Modifier = Modifier,
     contentDescription: String? = null,
-    placeholder: ImageVector = Icons.Default.Person,
+    role: Role? = null,
     load: suspend () -> ByteArray?,
 ) {
     val bitmap by produceState<ImageBitmap?>(null, key) {
         value = withContext(Dispatchers.IO) { load()?.toImageBitmap() }
     }
-    ImageOrPlaceholder(bitmap, modifier, contentDescription, placeholder)
+    ImageOrPlaceholder(bitmap, modifier, contentDescription, role)
 }
 
+/** The image, or (while loading / without a photo) the person figure for [role]. */
 @Composable
-private fun ImageOrPlaceholder(bitmap: ImageBitmap?, modifier: Modifier, contentDescription: String?, placeholder: ImageVector) {
+private fun ImageOrPlaceholder(bitmap: ImageBitmap?, modifier: Modifier, contentDescription: String?, role: Role?) {
     if (bitmap != null) {
         Image(bitmap, contentDescription, modifier, contentScale = ContentScale.Crop)
     } else {
         Box(modifier.background(MaterialTheme.colorScheme.surfaceVariant), contentAlignment = Alignment.Center) {
-            Icon(
-                placeholder, contentDescription,
-                Modifier.fillMaxSize(0.6f),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+            // The adult figure fills 60% of the box; a child's is smaller, on the same baseline.
+            PersonFigure(role, Modifier.fillMaxSize(0.6f), tint = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }
@@ -94,7 +107,7 @@ private fun ImageOrPlaceholder(bitmap: ImageBitmap?, modifier: Modifier, content
 /** Round thumbnail of a person; without a photo it shows the adult or child figure for [role]. */
 @Composable
 fun Avatar(thumb: ByteArray?, role: Role?, modifier: Modifier = Modifier, size: Dp = 48.dp) {
-    BlobImage(thumb, modifier.size(size).clip(CircleShape), placeholder = roleIcon(role))
+    BlobImage(thumb, modifier.size(size).clip(CircleShape), role = role)
 }
 
 @Composable
