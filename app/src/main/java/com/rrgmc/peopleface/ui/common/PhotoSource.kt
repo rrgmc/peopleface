@@ -9,6 +9,7 @@ import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Box
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material3.DropdownMenu
@@ -18,6 +19,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -25,6 +27,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.core.content.FileProvider
 import com.rrgmc.peopleface.R
+import com.rrgmc.peopleface.image.RecentPhotos
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -37,16 +40,28 @@ import java.io.IOException
  */
 fun cameraDir(context: Context) = File(context.cacheDir, "camera").apply { mkdirs() }
 
-fun pickedFile(context: Context, name: String) = File(cameraDir(context), name)
+/** Resolves a picture name given to the crop screen: a temporary copy, or one of the [RecentPhotos]. */
+fun pickedFile(context: Context, name: String) =
+    if (RecentPhotos.isRecent(name)) RecentPhotos.file(context, name) else File(cameraDir(context), name)
 
-class PhotoSource(val pickFromGallery: () -> Unit, val takePhoto: () -> Unit)
+class PhotoSource(val pickFromGallery: () -> Unit, val takePhoto: () -> Unit, val pickRecent: () -> Unit)
 
-/** Gallery / camera launchers. [onPicked] receives the name of a temporary file inside [cameraDir]. */
+/**
+ * Gallery / camera / recent-photo pickers. [onPicked] receives a name for [pickedFile]: a temporary file
+ * inside [cameraDir], or a recent photo.
+ */
 @Composable
 fun rememberPhotoSource(onPicked: (fileName: String) -> Unit): PhotoSource {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var pendingCamera by rememberSaveable { mutableStateOf<String?>(null) }
+    var showRecent by rememberSaveable { mutableStateOf(false) }
+    if (showRecent) {
+        RecentPhotosDialog(
+            onPick = { showRecent = false; onPicked(it.name) },
+            onDismiss = { showRecent = false },
+        )
+    }
     val openError = stringResource(R.string.image_load_error)
 
     val gallery = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
@@ -75,6 +90,7 @@ fun rememberPhotoSource(onPicked: (fileName: String) -> Unit): PhotoSource {
             pendingCamera = file.path
             camera.launch(FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file))
         },
+        pickRecent = { showRecent = true },
     )
 }
 
@@ -112,6 +128,15 @@ fun PhotoSourceMenu(
                 leadingIcon = { Icon(Icons.Default.PhotoCamera, null) },
                 onClick = { onDismiss(); source.takePhoto() },
             )
+            val context = LocalContext.current
+            val hasRecent = remember(expanded) { expanded && RecentPhotos.list(context).isNotEmpty() }
+            if (hasRecent) {
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.recent_photos)) },
+                    leadingIcon = { Icon(Icons.Default.History, null) },
+                    onClick = { onDismiss(); source.pickRecent() },
+                )
+            }
         }
     }
 }

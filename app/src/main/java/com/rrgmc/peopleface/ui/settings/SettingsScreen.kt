@@ -8,12 +8,15 @@ import android.text.format.Formatter
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.DeleteSweep
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Upload
 import androidx.compose.material3.AlertDialog
@@ -31,6 +34,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -45,6 +49,7 @@ import com.rrgmc.peopleface.R
 import com.rrgmc.peopleface.appContainer
 import com.rrgmc.peopleface.data.BackupManager
 import com.rrgmc.peopleface.data.db.AppDatabase
+import com.rrgmc.peopleface.image.RecentPhotos
 import com.rrgmc.peopleface.ui.common.ConfirmDialog
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -61,6 +66,8 @@ fun SettingsScreen(onBack: () -> Unit) {
     var pendingImport by rememberSaveable { mutableStateOf<String?>(null) }
     var restored by rememberSaveable { mutableStateOf(false) }
     var busy by remember { mutableStateOf(false) }
+    var recentCount by remember { mutableIntStateOf(RecentPhotos.list(context).size) }
+    val recentCleared = stringResource(R.string.recent_photos_cleared)
 
     val exportDone = stringResource(R.string.export_done)
     val exportFailed = stringResource(R.string.export_failed)
@@ -98,7 +105,7 @@ fun SettingsScreen(onBack: () -> Unit) {
         snackbarHost = { SnackbarHost(snackbar) },
     ) { padding ->
         Column(
-            Modifier.fillMaxSize().padding(padding).padding(16.dp),
+            Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Text(stringResource(R.string.backup_title), style = MaterialTheme.typography.titleLarge)
@@ -126,6 +133,25 @@ fun SettingsScreen(onBack: () -> Unit) {
             ) {
                 Icon(Icons.Default.Download, null, Modifier.padding(end = 8.dp))
                 Text(stringResource(R.string.import_db))
+            }
+
+            Text(
+                stringResource(R.string.recent_photos),
+                style = MaterialTheme.typography.titleLarge,
+                modifier = Modifier.padding(top = 16.dp),
+            )
+            Text(stringResource(R.string.recent_photos_explanation), style = MaterialTheme.typography.bodyMedium)
+            OutlinedButton(
+                enabled = recentCount > 0,
+                onClick = {
+                    RecentPhotos.clear(context)
+                    recentCount = 0
+                    scope.launch { snackbar.showSnackbar(recentCleared) }
+                },
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Icon(Icons.Default.DeleteSweep, null, Modifier.padding(end = 8.dp))
+                Text(stringResource(R.string.clear_recent_photos, recentCount))
             }
         }
     }
