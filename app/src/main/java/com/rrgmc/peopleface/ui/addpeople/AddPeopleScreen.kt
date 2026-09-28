@@ -142,7 +142,10 @@ private fun PersonRow(row: PersonRowState, onNameChange: (String) -> Unit, onRem
                 onValueChange = { row.roleLabel = it },
                 placeholder = { Text(stringResource(R.string.role_label_hint)) },
                 singleLine = true,
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                keyboardOptions = KeyboardOptions(
+                    capitalization = KeyboardCapitalization.Sentences,
+                    imeAction = ImeAction.Next,
+                ),
                 modifier = Modifier.fillMaxWidth().padding(start = 112.dp, end = 48.dp, top = 4.dp),
             )
         }

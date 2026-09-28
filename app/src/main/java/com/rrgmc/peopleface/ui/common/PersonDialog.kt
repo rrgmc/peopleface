@@ -67,6 +67,7 @@ fun PersonDialog(
                     OutlinedTextField(
                         value = roleLabel, onValueChange = { roleLabel = it },
                         label = { Text(stringResource(R.string.role_label_hint)) }, singleLine = true,
+                        keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
                         modifier = Modifier.fillMaxWidth(),
                     )
                 }
@@ -74,6 +75,7 @@ fun PersonDialog(
                     value = notes, onValueChange = { notes = it },
                     label = { Text(stringResource(R.string.notes)) },
                     minLines = 2,
+                    keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
                     modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
                 )
             }
