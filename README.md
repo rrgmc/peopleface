@@ -20,7 +20,7 @@ Only the cropped faces are stored (512 px JPEG + 192 px thumbnail); original pic
 Requirements: JDK 17 and the Android SDK (platform 35).
 
 ```
-./gradlew assembleDebug        # app/build/outputs/apk/debug/app-debug.apk
+./gradlew assembleDebug        # app/build/outputs/apk/debug/peopleface-<version>-debug.apk
 ./gradlew testDebugUnitTest
 ```
 
