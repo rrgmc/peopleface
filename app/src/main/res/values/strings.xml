@@ -18,11 +18,8 @@
     <string name="settings">Settings</string>
 
     <!-- Roles -->
-    <string name="role_father">Father</string>
-    <string name="role_mother">Mother</string>
-    <string name="role_kid">Kid</string>
-    <string name="role_other">Other</string>
-    <string name="role_label_hint">Role (grandma, nanny…)</string>
+    <string name="role_adult">Adult</string>
+    <string name="role_child">Child</string>
 
     <!-- Groups -->
     <string name="new_group">New group</string>
@@ -50,7 +47,7 @@
     <string name="family_name_hint">Family name (optional)</string>
     <string name="family_unnamed">Unnamed family</string>
     <string name="families_empty">No families yet. A family can also be a single person.</string>
-    <string name="family_empty">Add the people of this family: father, mother, kids…</string>
+    <string name="family_empty">Add the people of this family: adults and children.</string>
     <string name="add_people">Add people</string>
     <string name="add_people_hint">Fill in the names you know. Empty rows are ignored.</string>
     <string name="remove">Remove</string>

@@ -210,10 +210,9 @@ fun PersonDetailScreen(
             title = stringResource(R.string.edit_person),
             initialName = p.name,
             initialRole = p.role,
-            initialRoleLabel = p.roleLabel,
             initialNotes = p.notes,
-            onSave = { name, role, label, notes ->
-                scope.launch { repo.updatePerson(p.copy(name = name, role = role, roleLabel = label, notes = notes)) }
+            onSave = { name, role, notes ->
+                scope.launch { repo.updatePerson(p.copy(name = name, role = role, notes = notes)) }
             },
             onDismiss = { editing = false },
         )

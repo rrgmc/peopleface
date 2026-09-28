@@ -13,7 +13,6 @@ import kotlinx.coroutines.launch
 
 class PersonRowState(val key: Int, role: Role) {
     var role by mutableStateOf(role)
-    var roleLabel by mutableStateOf("")
     var name by mutableStateOf("")
 }
 
@@ -29,7 +28,7 @@ class AddPeopleViewModel(
     val individuals: Boolean = false,
 ) : ViewModel() {
     /** Role of new rows (each row has its own role selector). */
-    private val defaultRole = Role.KID
+    private val defaultRole = Role.CHILD
     private var nextKey = 0
 
     val rows = mutableStateListOf<PersonRowState>()
@@ -45,10 +44,9 @@ class AddPeopleViewModel(
     init {
         viewModelScope.launch {
             if (!individuals) {
-                // Suggest the parents the family doesn't have yet, then a kid.
+                // Suggest up to two adults (fewer if the family already has them), then a child.
                 val existing = if (familyId != 0L) repo.observePersonsInFamily(familyId).first().map { it.person.role } else emptyList()
-                if (Role.FATHER !in existing) addRow(Role.FATHER)
-                if (Role.MOTHER !in existing) addRow(Role.MOTHER)
+                repeat((2 - existing.count { it == Role.ADULT }).coerceAtLeast(0)) { addRow(Role.ADULT) }
             }
             addRow(defaultRole)
             loading = false
@@ -75,7 +73,7 @@ class AddPeopleViewModel(
         saving = true
         viewModelScope.launch {
             try {
-                val people = rows.map { Repository.NewPerson(it.name, it.role, it.roleLabel) }
+                val people = rows.map { Repository.NewPerson(it.name, it.role) }
                 if (individuals) {
                     repo.addIndividuals(groupId, people)
                     onSaved(null)

@@ -16,11 +16,8 @@
     <string name="settings">Configurações</string>
 
     <!-- Roles -->
-    <string name="role_father">Pai</string>
-    <string name="role_mother">Mãe</string>
-    <string name="role_kid">Filho(a)</string>
-    <string name="role_other">Outro</string>
-    <string name="role_label_hint">Papel (avó, babá…)</string>
+    <string name="role_adult">Adulto</string>
+    <string name="role_child">Criança</string>
 
     <!-- Groups -->
     <string name="new_group">Novo grupo</string>
@@ -50,7 +47,7 @@
     <string name="family_name_hint">Nome da família (opcional)</string>
     <string name="family_unnamed">Família sem nome</string>
     <string name="families_empty">Nenhuma família ainda. Uma família também pode ser uma única pessoa.</string>
-    <string name="family_empty">Adicione as pessoas desta família: pai, mãe, filhos…</string>
+    <string name="family_empty">Adicione as pessoas desta família: adultos e crianças.</string>
     <string name="add_people">Adicionar pessoas</string>
     <string name="add_people_hint">Preencha os nomes que você sabe. Linhas vazias são ignoradas.</string>
     <string name="remove">Remover</string>

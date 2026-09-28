@@ -66,7 +66,7 @@ fun FamilyDetailScreen(
     val scope = rememberCoroutineScope()
     val family by repo.observeFamily(familyId).collectAsStateWithLifecycle(initialValue = null)
     val members by repo.observePersonsInFamily(familyId).collectAsStateWithLifecycle(initialValue = emptyList())
-    val kids = remember(members) { members.filter { it.person.role == Role.KID } }
+    val kids = remember(members) { members.filter { it.person.role == Role.CHILD } }
 
     var editing by rememberSaveable { mutableStateOf(false) }
     var deleting by rememberSaveable { mutableStateOf(false) }

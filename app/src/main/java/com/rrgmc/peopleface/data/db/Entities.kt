@@ -35,7 +35,7 @@ data class FamilyEntity(
     @ColumnInfo(name = "created_at") val createdAt: Long = System.currentTimeMillis(),
 )
 
-enum class Role { FATHER, MOTHER, KID, OTHER }
+enum class Role { ADULT, CHILD }
 
 @Entity(
     tableName = "persons",
@@ -52,7 +52,7 @@ data class PersonEntity(
     @ColumnInfo(name = "family_id") val familyId: Long,
     val name: String,
     val role: Role,
-    /** Free-text role, used when [role] is [Role.OTHER] (grandmother, nanny...). */
+    /** No longer used (roles are only adult / child); older labels were moved into [notes] (database v2). */
     @ColumnInfo(name = "role_label") val roleLabel: String = "",
     val notes: String = "",
     @ColumnInfo(name = "thumbnail_photo_id") val thumbnailPhotoId: Long? = null,

@@ -86,15 +86,13 @@ fun Avatar(thumb: ByteArray?, modifier: Modifier = Modifier, size: Dp = 48.dp) {
 }
 
 @Composable
-fun roleText(role: Role, label: String = ""): String = when (role) {
-    Role.FATHER -> stringResource(R.string.role_father)
-    Role.MOTHER -> stringResource(R.string.role_mother)
-    Role.KID -> stringResource(R.string.role_kid)
-    Role.OTHER -> label.ifBlank { stringResource(R.string.role_other) }
+fun roleText(role: Role): String = when (role) {
+    Role.ADULT -> stringResource(R.string.role_adult)
+    Role.CHILD -> stringResource(R.string.role_child)
 }
 
 @Composable
-fun roleText(person: PersonEntity) = roleText(person.role, person.roleLabel)
+fun roleText(person: PersonEntity) = roleText(person.role)
 
 /** A family without its own name is shown by the names of its members. */
 @Composable

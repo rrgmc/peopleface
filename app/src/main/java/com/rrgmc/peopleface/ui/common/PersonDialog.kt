@@ -29,15 +29,13 @@ import com.rrgmc.peopleface.data.db.Role
 fun PersonDialog(
     title: String,
     initialName: String = "",
-    initialRole: Role = Role.KID,
-    initialRoleLabel: String = "",
+    initialRole: Role = Role.CHILD,
     initialNotes: String = "",
-    onSave: (name: String, role: Role, roleLabel: String, notes: String) -> Unit,
+    onSave: (name: String, role: Role, notes: String) -> Unit,
     onDismiss: () -> Unit,
 ) {
     var name by rememberSaveable { mutableStateOf(initialName) }
     var role by rememberSaveable { mutableStateOf(initialRole) }
-    var roleLabel by rememberSaveable { mutableStateOf(initialRoleLabel) }
     var notes by rememberSaveable { mutableStateOf(initialNotes) }
 
     AlertDialog(
@@ -63,14 +61,6 @@ fun PersonDialog(
                         )
                     }
                 }
-                if (role == Role.OTHER) {
-                    OutlinedTextField(
-                        value = roleLabel, onValueChange = { roleLabel = it },
-                        label = { Text(stringResource(R.string.role_label_hint)) }, singleLine = true,
-                        keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
-                        modifier = Modifier.fillMaxWidth(),
-                    )
-                }
                 OutlinedTextField(
                     value = notes, onValueChange = { notes = it },
                     label = { Text(stringResource(R.string.notes)) },
@@ -83,7 +73,7 @@ fun PersonDialog(
         confirmButton = {
             TextButton(
                 enabled = name.isNotBlank(),
-                onClick = { onDismiss(); onSave(name, role, roleLabel, notes) },
+                onClick = { onDismiss(); onSave(name, role, notes) },
             ) { Text(stringResource(R.string.save)) }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },
