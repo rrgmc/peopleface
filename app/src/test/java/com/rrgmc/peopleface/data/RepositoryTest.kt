@@ -208,4 +208,37 @@ class RepositoryTest {
             assertEquals(4, options.map { it.person.name }.distinct().size)
         }
     }
+
+    @Test
+    fun familyTagIsShownOnMembersAndClearedWhenTagIsDeleted() = runTest {
+        val group = repo.addGroup("School")
+        val other = repo.addGroup("Club")
+        val family = repo.addFamily(group, "Silva")
+        repo.addPerson(family, "Ana", Role.CHILD)
+        val bus = repo.addTag(group, " Bus ", 0xFF1E88E5.toInt())
+        repo.addTag(group, "Class B", 0xFFE53935.toInt())
+        repo.addTag(other, "Tennis", 0xFF43A047.toInt())
+
+        assertEquals(listOf("Bus", "Class B"), repo.observeTags(group).first().map { it.name })
+        assertNull(repo.observePersonsInFamily(family).first().single().tagName)
+
+        repo.setFamilyTag(family, bus)
+        assertEquals(bus, repo.observeFamily(family).first()?.tagId)
+        val ana = repo.observePersonsInFamily(family).first().single()
+        assertEquals("Bus", ana.tagName)
+        assertEquals(0xFF1E88E5.toInt(), ana.tagColor)
+        assertTrue(ana.matches(normalizeForSearch("bus")))
+
+        val tag = repo.observeTags(group).first().first { it.id == bus }
+        repo.updateTag(tag.copy(name = "Van", color = 0xFF000000.toInt()))
+        assertEquals("Van", repo.observePersonsInFamily(family).first().single().tagName)
+
+        repo.deleteTag(tag)
+        assertNull(repo.observeFamily(family).first()?.tagId)
+        assertNull(repo.observePersonsInFamily(family).first().single().tagName)
+
+        repo.deleteGroup(repo.observeGroup(group).first()!!)
+        assertTrue(repo.observeTags(group).first().isEmpty())
+        assertEquals(1, repo.observeTags(other).first().size)
+    }
 }

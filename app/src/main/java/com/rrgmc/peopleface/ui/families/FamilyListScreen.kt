@@ -16,6 +16,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Label
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AddAPhoto
 import androidx.compose.material.icons.filled.Delete
@@ -51,10 +52,12 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.rrgmc.peopleface.R
 import com.rrgmc.peopleface.appContainer
 import com.rrgmc.peopleface.data.db.PersonRow
+import com.rrgmc.peopleface.data.db.TagEntity
 import com.rrgmc.peopleface.ui.common.Avatar
 import com.rrgmc.peopleface.ui.common.ConfirmDialog
 import com.rrgmc.peopleface.ui.common.NameNotesDialog
 import com.rrgmc.peopleface.ui.common.PhotoSourceMenu
+import com.rrgmc.peopleface.ui.common.TagChip
 import com.rrgmc.peopleface.ui.common.rememberPhotoSource
 import com.rrgmc.peopleface.ui.common.familyTitle
 import kotlinx.coroutines.launch
@@ -70,6 +73,7 @@ fun FamilyListScreen(
     onNewFamily: (groupId: Long) -> Unit,
     onAddIndividuals: (groupId: Long) -> Unit,
     onCropGroupPhoto: (groupId: Long, fileNames: List<String>) -> Unit,
+    onManageTags: (groupId: Long) -> Unit,
 ) {
     val repo = appContainer().repository
     val scope = rememberCoroutineScope()
@@ -77,6 +81,8 @@ fun FamilyListScreen(
     val families by repo.observeFamilies(groupId).collectAsStateWithLifecycle(initialValue = null)
     val persons by repo.observePersonsInGroup(groupId).collectAsStateWithLifecycle(initialValue = emptyList())
     val membersByFamily = remember(persons) { persons.groupBy { it.person.familyId } }
+    val tags by repo.observeTags(groupId).collectAsStateWithLifecycle(initialValue = emptyList())
+    val tagsById = remember(tags) { tags.associateBy { it.id } }
 
     var menu by remember { mutableStateOf(false) }
     var photoMenu by remember { mutableStateOf(false) }
@@ -109,6 +115,11 @@ fun FamilyListScreen(
                                 text = { Text(stringResource(R.string.add_individuals)) },
                                 leadingIcon = { Icon(Icons.Default.PersonAdd, null) },
                                 onClick = { menu = false; onAddIndividuals(groupId) },
+                            )
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.tags)) },
+                                leadingIcon = { Icon(Icons.AutoMirrored.Filled.Label, null) },
+                                onClick = { menu = false; onManageTags(groupId) },
                             )
                             DropdownMenuItem(
                                 text = { Text(stringResource(R.string.edit)) },
@@ -165,6 +176,7 @@ fun FamilyListScreen(
                         onClick = null,
                         onPersonClick = onOpenPerson,
                         onAdd = { onAddIndividuals(groupId) },
+                        showMemberTags = true,
                     )
                 }
             }
@@ -173,6 +185,7 @@ fun FamilyListScreen(
                 FamilyCard(
                     title = familyTitle(family.name, members.map { it.person.name }),
                     members = members,
+                    tag = family.tagId?.let { tagsById[it] },
                     onClick = { onOpenFamily(family.id) },
                     onPersonClick = onOpenPerson,
                 )
@@ -209,7 +222,10 @@ private fun FamilyCard(
     members: List<PersonRow>,
     onClick: (() -> Unit)?,
     onPersonClick: (Long) -> Unit,
+    tag: TagEntity? = null,
     onAdd: (() -> Unit)? = null,
+    /** For the individuals card: each person's (one-person family's) tag is shown on their picture. */
+    showMemberTags: Boolean = false,
 ) {
     val content: @Composable () -> Unit = {
         Column(Modifier.padding(12.dp)) {
@@ -219,8 +235,10 @@ private fun FamilyCard(
                     style = MaterialTheme.typography.titleMedium,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f),
+                    // With a tag, the tag follows the title instead of the end of the row.
+                    modifier = Modifier.weight(1f, fill = tag == null),
                 )
+                if (tag != null) TagChip(tag, Modifier.padding(start = 8.dp))
                 if (onAdd != null) {
                     IconButton(onClick = onAdd) { Icon(Icons.Default.PersonAdd, stringResource(R.string.add_individuals)) }
                 }
@@ -236,7 +254,12 @@ private fun FamilyCard(
                             horizontalAlignment = Alignment.CenterHorizontally,
                             modifier = Modifier.width(72.dp).clickable { onPersonClick(m.person.id) },
                         ) {
-                            Avatar(m.thumb, m.person.role, size = 64.dp)
+                            Box(contentAlignment = Alignment.BottomCenter) {
+                                Avatar(m.thumb, m.person.role, size = 64.dp)
+                                if (showMemberTags && m.tagName != null && m.tagColor != null) {
+                                    TagChip(m.tagName, m.tagColor)
+                                }
+                            }
                             Text(
                                 m.person.name,
                                 style = MaterialTheme.typography.labelMedium,

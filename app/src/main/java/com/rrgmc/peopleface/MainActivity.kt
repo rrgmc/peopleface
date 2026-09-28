@@ -36,6 +36,7 @@ import com.rrgmc.peopleface.ui.person.PersonDetailScreen
 import com.rrgmc.peopleface.ui.quiz.QuizScreen
 import com.rrgmc.peopleface.ui.search.SearchScreen
 import com.rrgmc.peopleface.ui.settings.SettingsScreen
+import com.rrgmc.peopleface.ui.tags.TagListScreen
 import com.rrgmc.peopleface.ui.theme.PeopleFaceTheme
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -110,6 +111,7 @@ object Routes {
     fun group(id: Long) = "group/$id"
     fun family(id: Long) = "family/$id"
     fun person(id: Long) = "person/$id"
+    fun tags(groupId: Long) = "tags/$groupId"
     fun quiz(groupId: Long = 0) = "quiz?groupId=$groupId"
 
     /** Add several people to [familyId], or to a new family in [groupId] when [familyId] is 0. */
@@ -165,6 +167,7 @@ private fun AppNavigation(sharedFiles: List<String>, onSharedHandled: () -> Unit
                 onNewFamily = { groupId -> nav.navigate(Routes.addPeople(groupId)) },
                 onAddIndividuals = { groupId -> nav.navigate(Routes.addIndividuals(groupId)) },
                 onCropGroupPhoto = { groupId, files -> nav.navigate(Routes.crop(files, groupId = groupId)) },
+                onManageTags = { groupId -> nav.navigate(Routes.tags(groupId)) },
             )
         }
         composable(
@@ -202,7 +205,11 @@ private fun AppNavigation(sharedFiles: List<String>, onSharedHandled: () -> Unit
                 onOpenPerson = { id -> nav.navigate(Routes.person(id)) },
                 onAddPeople = { groupId -> nav.navigate(Routes.addPeople(groupId, familyId)) },
                 onCropGroupPhoto = { files -> nav.navigate(Routes.crop(files, familyId = familyId)) },
+                onManageTags = { groupId -> nav.navigate(Routes.tags(groupId)) },
             )
+        }
+        composable("tags/{groupId}", listOf(navArgument("groupId") { type = NavType.LongType })) {
+            TagListScreen(groupId = it.arguments!!.getLong("groupId"), onBack = back)
         }
         composable("person/{id}", listOf(navArgument("id") { type = NavType.LongType })) {
             val personId = it.arguments!!.getLong("id")

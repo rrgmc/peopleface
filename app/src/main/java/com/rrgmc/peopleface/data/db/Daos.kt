@@ -9,11 +9,13 @@ import androidx.room.Update
 import kotlinx.coroutines.flow.Flow
 
 private const val PERSON_ROW_SELECT = """
-    SELECT p.*, ph.thumb AS thumb, f.name AS family_name, g.id AS group_id, g.name AS group_name
+    SELECT p.*, ph.thumb AS thumb, f.name AS family_name, g.id AS group_id, g.name AS group_name,
+        t.name AS tag_name, t.color AS tag_color
     FROM persons p
     JOIN families f ON f.id = p.family_id
     JOIN origin_groups g ON g.id = f.group_id
     LEFT JOIN photos ph ON ph.id = p.thumbnail_photo_id
+    LEFT JOIN tags t ON t.id = f.tag_id
 """
 
 /** Adults first, then children in their chosen order. */
@@ -63,6 +65,24 @@ interface FamilyDao {
 
     @Delete
     suspend fun delete(family: FamilyEntity)
+
+    @Query("UPDATE families SET tag_id = :tagId WHERE id = :familyId")
+    suspend fun setTag(familyId: Long, tagId: Long?)
+}
+
+@Dao
+interface TagDao {
+    @Query("SELECT * FROM tags WHERE group_id = :groupId ORDER BY name COLLATE NOCASE, id")
+    fun observeByGroup(groupId: Long): Flow<List<TagEntity>>
+
+    @Insert
+    suspend fun insert(tag: TagEntity): Long
+
+    @Update
+    suspend fun update(tag: TagEntity)
+
+    @Delete
+    suspend fun delete(tag: TagEntity)
 }
 
 @Dao

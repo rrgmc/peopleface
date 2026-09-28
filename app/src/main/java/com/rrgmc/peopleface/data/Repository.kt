@@ -8,6 +8,7 @@ import com.rrgmc.peopleface.data.db.PersonEntity
 import com.rrgmc.peopleface.data.db.PersonRow
 import com.rrgmc.peopleface.data.db.PhotoEntity
 import com.rrgmc.peopleface.data.db.Role
+import com.rrgmc.peopleface.data.db.TagEntity
 import kotlinx.coroutines.flow.Flow
 
 class Repository(private val db: AppDatabase) {
@@ -15,6 +16,7 @@ class Repository(private val db: AppDatabase) {
     private val families = db.familyDao()
     private val persons = db.personDao()
     private val photos = db.photoDao()
+    private val tags = db.tagDao()
 
     // Groups
     fun observeGroups() = groups.observeAll()
@@ -31,6 +33,15 @@ class Repository(private val db: AppDatabase) {
         families.insert(FamilyEntity(groupId = groupId, name = name.trim(), notes = notes.trim()))
     suspend fun updateFamily(family: FamilyEntity) = families.update(family)
     suspend fun deleteFamily(family: FamilyEntity) = families.delete(family)
+    suspend fun setFamilyTag(familyId: Long, tagId: Long?) = families.setTag(familyId, tagId)
+
+    // Tags
+    fun observeTags(groupId: Long) = tags.observeByGroup(groupId)
+    suspend fun addTag(groupId: Long, name: String, color: Int) =
+        tags.insert(TagEntity(groupId = groupId, name = name.trim(), color = color))
+    suspend fun updateTag(tag: TagEntity) = tags.update(tag.copy(name = tag.name.trim()))
+    /** Families with this tag are left without a tag. */
+    suspend fun deleteTag(tag: TagEntity) = tags.delete(tag)
 
     // Persons
     fun observePersonsInGroup(groupId: Long) = persons.observeRowsByGroup(groupId)

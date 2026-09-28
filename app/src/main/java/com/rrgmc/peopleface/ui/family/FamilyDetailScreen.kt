@@ -10,6 +10,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Label
 import androidx.compose.material.icons.filled.AddAPhoto
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
@@ -36,6 +37,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
@@ -45,6 +47,8 @@ import com.rrgmc.peopleface.R
 import com.rrgmc.peopleface.appContainer
 import com.rrgmc.peopleface.data.db.Role
 import com.rrgmc.peopleface.ui.common.Avatar
+import com.rrgmc.peopleface.ui.common.ChooseTagDialog
+import com.rrgmc.peopleface.ui.common.TagChip
 import com.rrgmc.peopleface.ui.common.ConfirmDialog
 import com.rrgmc.peopleface.ui.common.NameNotesDialog
 import com.rrgmc.peopleface.ui.common.PhotoSourceMenu
@@ -61,15 +65,20 @@ fun FamilyDetailScreen(
     onOpenPerson: (Long) -> Unit,
     onAddPeople: (groupId: Long) -> Unit,
     onCropGroupPhoto: (fileNames: List<String>) -> Unit,
+    onManageTags: (groupId: Long) -> Unit,
 ) {
     val repo = appContainer().repository
     val scope = rememberCoroutineScope()
     val family by repo.observeFamily(familyId).collectAsStateWithLifecycle(initialValue = null)
     val members by repo.observePersonsInFamily(familyId).collectAsStateWithLifecycle(initialValue = emptyList())
     val kids = remember(members) { members.filter { it.person.role == Role.CHILD } }
+    val groupId = family?.groupId ?: 0L
+    val tags by remember(groupId) { repo.observeTags(groupId) }.collectAsStateWithLifecycle(initialValue = emptyList())
+    val tag = tags.firstOrNull { it.id == family?.tagId }
 
     var editing by rememberSaveable { mutableStateOf(false) }
     var deleting by rememberSaveable { mutableStateOf(false) }
+    var choosingTag by rememberSaveable { mutableStateOf(false) }
     var photoMenu by remember { mutableStateOf(false) }
     var overflowMenu by remember { mutableStateOf(false) }
     val photoSource = rememberPhotoSource(onCropGroupPhoto)
@@ -80,7 +89,10 @@ fun FamilyDetailScreen(
         topBar = {
             TopAppBar(
                 title = {
-                    Text(title, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(title, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
+                        if (tag != null) TagChip(tag, Modifier.padding(start = 8.dp))
+                    }
                 },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
@@ -104,6 +116,11 @@ fun FamilyDetailScreen(
                                 text = { Text(stringResource(R.string.edit)) },
                                 leadingIcon = { Icon(Icons.Default.Edit, null) },
                                 onClick = { overflowMenu = false; editing = true },
+                            )
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.tag)) },
+                                leadingIcon = { Icon(Icons.AutoMirrored.Filled.Label, null) },
+                                onClick = { overflowMenu = false; choosingTag = true },
                             )
                             DropdownMenuItem(
                                 text = { Text(stringResource(R.string.delete)) },
@@ -177,6 +194,15 @@ fun FamilyDetailScreen(
             nameRequired = false,
             onSave = { name, notes -> scope.launch { repo.updateFamily(f.copy(name = name.trim(), notes = notes.trim())) } },
             onDismiss = { editing = false },
+        )
+    }
+    if (choosingTag && f != null) {
+        ChooseTagDialog(
+            tags = tags,
+            selectedId = f.tagId,
+            onSelect = { tagId -> scope.launch { repo.setFamilyTag(f.id, tagId) } },
+            onManage = { onManageTags(f.groupId) },
+            onDismiss = { choosingTag = false },
         )
     }
     if (deleting && f != null) {
