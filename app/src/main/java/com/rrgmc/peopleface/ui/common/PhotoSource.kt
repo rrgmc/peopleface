@@ -9,6 +9,7 @@ import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Box
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material.icons.filled.PhotoLibrary
@@ -44,7 +45,12 @@ fun cameraDir(context: Context) = File(context.cacheDir, "camera").apply { mkdir
 fun pickedFile(context: Context, name: String) =
     if (RecentPhotos.isRecent(name)) RecentPhotos.file(context, name) else File(cameraDir(context), name)
 
-class PhotoSource(val pickFromGallery: () -> Unit, val takePhoto: () -> Unit, val pickRecent: () -> Unit)
+class PhotoSource(
+    val pickFromGallery: () -> Unit,
+    val pickFromFiles: () -> Unit,
+    val takePhoto: () -> Unit,
+    val pickRecent: () -> Unit,
+)
 
 /** How many pictures can be picked from the gallery at once. */
 const val MAX_PICKED_PHOTOS = 10
@@ -67,10 +73,8 @@ fun rememberPhotoSource(onPicked: (fileNames: List<String>) -> Unit): PhotoSourc
     }
     val openError = stringResource(R.string.image_load_error)
 
-    val gallery = rememberLauncherForActivityResult(
-        ActivityResultContracts.PickMultipleVisualMedia(MAX_PICKED_PHOTOS)
-    ) { uris ->
-        if (uris.isEmpty()) return@rememberLauncherForActivityResult
+    val handleUris: (List<Uri>) -> Unit = handle@{ uris ->
+        if (uris.isEmpty()) return@handle
         scope.launch {
             val names = withContext(Dispatchers.IO) {
                 uris.mapIndexedNotNull { i, uri ->
@@ -86,6 +90,13 @@ fun rememberPhotoSource(onPicked: (fileNames: List<String>) -> Unit): PhotoSourc
             if (names.isNotEmpty()) onPicked(names)
         }
     }
+    val gallery = rememberLauncherForActivityResult(
+        ActivityResultContracts.PickMultipleVisualMedia(MAX_PICKED_PHOTOS)
+    ) { handleUris(it) }
+    // The system document picker also lists cloud storage apps such as Google Drive and Dropbox.
+    val files = rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) {
+        handleUris(it.take(MAX_PICKED_PHOTOS))
+    }
     val camera = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { ok ->
         val path = pendingCamera ?: return@rememberLauncherForActivityResult
         pendingCamera = null
@@ -96,6 +107,7 @@ fun rememberPhotoSource(onPicked: (fileNames: List<String>) -> Unit): PhotoSourc
         pickFromGallery = {
             gallery.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
         },
+        pickFromFiles = { files.launch(arrayOf("image/*")) },
         takePhoto = {
             val file = File(cameraDir(context), "photo_${System.currentTimeMillis()}.jpg")
             pendingCamera = file.path
@@ -105,7 +117,8 @@ fun rememberPhotoSource(onPicked: (fileNames: List<String>) -> Unit): PhotoSourc
     )
 }
 
-private fun copyToCache(context: Context, uri: Uri, index: Int): File {
+/** Copies [uri] into [cameraDir], so it can be read after the caller's temporary permission ends. */
+fun copyToCache(context: Context, uri: Uri, index: Int): File {
     val file = File(cameraDir(context), "picked_${System.currentTimeMillis()}_$index")
     try {
         context.contentResolver.openInputStream(uri)?.use { input ->
@@ -118,7 +131,7 @@ private fun copyToCache(context: Context, uri: Uri, index: Int): File {
     return file
 }
 
-/** Wraps [anchor] with a Gallery / Camera drop-down menu. */
+/** Wraps [anchor] with a Gallery / Files / Camera drop-down menu. */
 @Composable
 fun PhotoSourceMenu(
     source: PhotoSource,
@@ -133,6 +146,11 @@ fun PhotoSourceMenu(
                 text = { Text(stringResource(R.string.from_gallery)) },
                 leadingIcon = { Icon(Icons.Default.PhotoLibrary, null) },
                 onClick = { onDismiss(); source.pickFromGallery() },
+            )
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.from_files)) },
+                leadingIcon = { Icon(Icons.Default.Folder, null) },
+                onClick = { onDismiss(); source.pickFromFiles() },
             )
             DropdownMenuItem(
                 text = { Text(stringResource(R.string.take_photo)) },

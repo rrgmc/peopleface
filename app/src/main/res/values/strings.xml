@@ -66,6 +66,9 @@
     <string name="delete_person_title">Delete person?</string>
     <string name="delete_person_text">%1$s and all their photos will be deleted.</string>
     <string name="from_gallery">From gallery</string>
+    <string name="from_files">From files (Drive, Dropbox…)</string>
+    <string name="share_choose_group">Add faces to which group?</string>
+    <string name="share_no_groups">Create a group first, then share the photo again.</string>
     <string name="recent_photos">Recent photos</string>
     <string name="recent_photos_explanation">The last 10 photos you cut faces from are kept on this phone so you can open them again. They are not part of the database or its backup.</string>
     <string name="clear_recent_photos">Clear recent photos (%1$d)</string>

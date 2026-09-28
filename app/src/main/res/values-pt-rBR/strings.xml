@@ -66,6 +66,9 @@
     <string name="delete_person_title">Excluir pessoa?</string>
     <string name="delete_person_text">%1$s e todas as suas fotos serão excluídas.</string>
     <string name="from_gallery">Da galeria</string>
+    <string name="from_files">Dos arquivos (Drive, Dropbox…)</string>
+    <string name="share_choose_group">Adicionar rostos a qual grupo?</string>
+    <string name="share_no_groups">Crie um grupo primeiro e depois compartilhe a foto novamente.</string>
     <string name="recent_photos">Fotos recentes</string>
     <string name="recent_photos_explanation">As últimas 10 fotos de onde você recortou rostos ficam guardadas neste celular para poder abri-las de novo. Elas não fazem parte do banco de dados nem do backup.</string>
     <string name="clear_recent_photos">Limpar fotos recentes (%1$d)</string>
