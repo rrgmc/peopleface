@@ -41,20 +41,20 @@ class RepositoryTest {
     fun familyWithManyKidsIsOrderedParentsFirst() = runTest {
         val group = repo.addGroup("School")
         val family = repo.addFamily(group, "Silva")
-        repo.addPerson(family, "Ana", Role.KID)
-        repo.addPerson(family, "Bia", Role.KID)
-        repo.addPerson(family, "Grandma", Role.OTHER, roleLabel = "Grandmother")
-        repo.addPerson(family, "Rita", Role.MOTHER)
-        repo.addPerson(family, "Caio", Role.KID)
-        repo.addPerson(family, "João", Role.FATHER)
+        repo.addPerson(family, "Ana", Role.CHILD)
+        repo.addPerson(family, "Bia", Role.CHILD)
+        repo.addPerson(family, "Grandma", Role.ADULT)
+        repo.addPerson(family, "Rita", Role.ADULT)
+        repo.addPerson(family, "Caio", Role.CHILD)
+        repo.addPerson(family, "João", Role.ADULT)
 
         val names = repo.observePersonsInFamily(family).first().map { it.person.name }
-        assertEquals(listOf("João", "Rita", "Ana", "Bia", "Caio", "Grandma"), names)
+        assertEquals(listOf("Grandma", "Rita", "João", "Ana", "Bia", "Caio"), names)
 
         val members = repo.observePersonsInFamily(family).first()
-        repo.swapOrder(members[4].person, members[3].person) // Caio above Bia
+        repo.swapOrder(members[5].person, members[4].person) // Caio above Bia
         assertEquals(
-            listOf("João", "Rita", "Ana", "Caio", "Bia", "Grandma"),
+            listOf("Grandma", "Rita", "João", "Ana", "Caio", "Bia"),
             repo.observePersonsInFamily(family).first().map { it.person.name },
         )
     }
@@ -63,22 +63,21 @@ class RepositoryTest {
     fun addPeopleSkipsBlankNames() = runTest {
         val group = repo.addGroup("School")
         val rows = listOf(
-            Repository.NewPerson("  ", Role.FATHER),
-            Repository.NewPerson("Rita", Role.MOTHER),
-            Repository.NewPerson("Ana", Role.KID),
-            Repository.NewPerson("", Role.KID),
-            Repository.NewPerson("Bia", Role.KID),
-            Repository.NewPerson("Tia", Role.OTHER, roleLabel = "Aunt"),
+            Repository.NewPerson("  ", Role.ADULT),
+            Repository.NewPerson("Rita", Role.ADULT),
+            Repository.NewPerson("Ana", Role.CHILD),
+            Repository.NewPerson("", Role.CHILD),
+            Repository.NewPerson("Bia", Role.CHILD),
+            Repository.NewPerson("Tia", Role.ADULT),
         )
         val family = repo.addPeople(group, 0, "", rows)!!
         val members = repo.observePersonsInFamily(family).first()
-        assertEquals(listOf("Rita", "Ana", "Bia", "Tia"), members.map { it.person.name })
-        assertEquals("Aunt", members.last().person.roleLabel)
+        assertEquals(listOf("Rita", "Tia", "Ana", "Bia"), members.map { it.person.name })
 
         // Adding more to the existing family keeps the kids' order.
-        repo.addPeople(group, family, "", listOf(Repository.NewPerson("Caio", Role.KID), Repository.NewPerson("", Role.FATHER)))
+        repo.addPeople(group, family, "", listOf(Repository.NewPerson("Caio", Role.CHILD), Repository.NewPerson("", Role.ADULT)))
         assertEquals(
-            listOf("Rita", "Ana", "Bia", "Caio", "Tia"),
+            listOf("Rita", "Tia", "Ana", "Bia", "Caio"),
             repo.observePersonsInFamily(family).first().map { it.person.name },
         )
     }
@@ -87,9 +86,9 @@ class RepositoryTest {
     fun addIndividualsMakesOneFamilyEach() = runTest {
         val group = repo.addGroup("Club")
         val added = repo.addIndividuals(group, listOf(
-            Repository.NewPerson("Ana", Role.OTHER),
-            Repository.NewPerson(" ", Role.OTHER),
-            Repository.NewPerson("Rui", Role.OTHER, roleLabel = "Coach"),
+            Repository.NewPerson("Ana", Role.ADULT),
+            Repository.NewPerson(" ", Role.ADULT),
+            Repository.NewPerson("Rui", Role.ADULT),
         ))
         assertEquals(2, added)
         val rows = repo.observePersonsInGroup(group).first()
@@ -101,18 +100,18 @@ class RepositoryTest {
     @Test
     fun addPeopleWithNothingCreatesNoFamily() = runTest {
         val group = repo.addGroup("School")
-        assertNull(repo.addPeople(group, 0, " ", listOf(Repository.NewPerson("", Role.KID))))
+        assertNull(repo.addPeople(group, 0, " ", listOf(Repository.NewPerson("", Role.CHILD))))
         assertEquals(0, repo.observeGroups().first().single().familyCount)
 
         // A named family with nobody in it yet is allowed.
-        val family = repo.addPeople(group, 0, "Silva", listOf(Repository.NewPerson("", Role.KID)))
+        val family = repo.addPeople(group, 0, "Silva", listOf(Repository.NewPerson("", Role.CHILD)))
         assertEquals("Silva", repo.observeFamily(family!!).first()!!.name)
     }
 
     @Test
     fun firstPhotoBecomesThumbnailAndDeletionFallsBack() = runTest {
         val family = repo.addFamily(repo.addGroup("Club"), "")
-        val person = repo.addPerson(family, "Leo", Role.KID)
+        val person = repo.addPerson(family, "Leo", Role.CHILD)
         val p1 = repo.addPhoto(person, byteArrayOf(1), byteArrayOf(11))
         val p2 = repo.addPhoto(person, byteArrayOf(2), byteArrayOf(22))
 
@@ -132,7 +131,7 @@ class RepositoryTest {
     @Test
     fun deletingGroupCascades() = runTest {
         val groupId = repo.addGroup("Club")
-        val person = repo.addPerson(repo.addFamily(groupId, "X"), "Leo", Role.KID)
+        val person = repo.addPerson(repo.addFamily(groupId, "X"), "Leo", Role.CHILD)
         val photo = repo.addPhoto(person, byteArrayOf(1), byteArrayOf(2))
         val group = repo.observeGroup(groupId).first()!!
 
@@ -146,9 +145,9 @@ class RepositoryTest {
         val g = repo.addGroup("School")
         val f1 = repo.addFamily(g, "A")
         val f2 = repo.addFamily(g, "B")
-        val a = repo.addPerson(f1, "Ana", Role.KID)
-        repo.addPerson(f1, "Rui", Role.FATHER)
-        repo.addPerson(f2, "Zé", Role.KID)
+        val a = repo.addPerson(f1, "Ana", Role.CHILD)
+        repo.addPerson(f1, "Rui", Role.ADULT)
+        repo.addPerson(f2, "Zé", Role.CHILD)
         repo.addPhoto(a, byteArrayOf(1), byteArrayOf(1))
 
         val counts = repo.observeGroups().first().single()
@@ -162,7 +161,7 @@ class RepositoryTest {
     fun searchIgnoresAccentsAndCase() = runTest {
         val g = repo.addGroup("Clube Pinheiros")
         val f = repo.addFamily(g, "Conceição")
-        repo.addPerson(f, "José", Role.FATHER, notes = "Joga futebol")
+        repo.addPerson(f, "José", Role.ADULT, notes = "Joga futebol")
         val row = repo.observeAllPersons().first().single()
 
         assertTrue(row.matches(normalizeForSearch("jose")))
@@ -175,13 +174,13 @@ class RepositoryTest {
     fun familyLabelsTellApartSameNames() = runTest {
         val g = repo.addGroup("School")
         val f1 = repo.addPeople(g, 0, "", listOf(
-            Repository.NewPerson("Michelangelo", Role.FATHER),
-            Repository.NewPerson("Suzi", Role.MOTHER),
-            Repository.NewPerson("Isabella", Role.KID),
-            Repository.NewPerson("Milena", Role.KID),
+            Repository.NewPerson("Michelangelo", Role.ADULT),
+            Repository.NewPerson("Suzi", Role.ADULT),
+            Repository.NewPerson("Isabella", Role.CHILD),
+            Repository.NewPerson("Milena", Role.CHILD),
         ))!!
-        val f2 = repo.addPeople(g, 0, "Silva", listOf(Repository.NewPerson("Isabella", Role.KID), Repository.NewPerson("Leo", Role.KID)))!!
-        val f3 = repo.addPeople(g, 0, "", listOf(Repository.NewPerson("Ana", Role.KID)))!!
+        val f2 = repo.addPeople(g, 0, "Silva", listOf(Repository.NewPerson("Isabella", Role.CHILD), Repository.NewPerson("Leo", Role.CHILD)))!!
+        val f3 = repo.addPeople(g, 0, "", listOf(Repository.NewPerson("Ana", Role.CHILD)))!!
         val rows = repo.observePersonsInGroup(g).first()
         val labels = familyLabels(rows)
         fun label(family: Long, name: String) = labels[rows.single { it.person.familyId == family && it.person.name == name }.person.id]
@@ -199,7 +198,7 @@ class RepositoryTest {
     @Test
     fun quizOptionsContainTargetAndUniqueNames() = runTest {
         val f = repo.addFamily(repo.addGroup("G"), "")
-        listOf("Ana", "Bia", "Caio", "Duda", "Eva", "Ana").forEach { repo.addPerson(f, it, Role.KID) }
+        listOf("Ana", "Bia", "Caio", "Duda", "Eva", "Ana").forEach { repo.addPerson(f, it, Role.CHILD) }
         val all = repo.observeAllPersons().first()
         val target = all.first()
         repeat(20) {

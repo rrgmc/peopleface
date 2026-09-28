@@ -1,0 +1,84 @@
+package com.rrgmc.peopleface.data
+
+import android.content.Context
+import android.database.sqlite.SQLiteDatabase
+import androidx.room.Room
+import androidx.test.core.app.ApplicationProvider
+import com.rrgmc.peopleface.data.db.AppDatabase
+import org.json.JSONObject
+import org.junit.Assert.assertEquals
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import java.io.File
+
+@RunWith(RobolectricTestRunner::class)
+class MigrationTest {
+    private val context = ApplicationProvider.getApplicationContext<Context>()
+
+    /** Creates an empty database with the schema Room exported for [version] (tests run in the module dir). */
+    private fun createDatabase(file: File, version: Int): SQLiteDatabase {
+        val schema = JSONObject(File("schemas/${AppDatabase::class.java.name}/$version.json").readText())
+            .getJSONObject("database")
+        val db = SQLiteDatabase.openOrCreateDatabase(file, null)
+        val entities = schema.getJSONArray("entities")
+        for (i in 0 until entities.length()) {
+            val entity = entities.getJSONObject(i)
+            val table = entity.getString("tableName")
+            db.execSQL(entity.getString("createSql").replace("\${TABLE_NAME}", table))
+            val indices = entity.optJSONArray("indices") ?: continue
+            for (j in 0 until indices.length()) {
+                db.execSQL(indices.getJSONObject(j).getString("createSql").replace("\${TABLE_NAME}", table))
+            }
+        }
+        val setup = schema.getJSONArray("setupQueries")
+        for (i in 0 until setup.length()) db.execSQL(setup.getString(i))
+        db.version = version
+        return db
+    }
+
+    @Test
+    fun rolesBecomeAdultOrChildAndLabelsMoveToNotes() {
+        val file = context.getDatabasePath("migration-test.db").apply { parentFile?.mkdirs(); delete() }
+        createDatabase(file, 1).use { db ->
+            db.execSQL("INSERT INTO origin_groups (id, name, notes, created_at) VALUES (1, 'School', '', 0)")
+            db.execSQL("INSERT INTO families (id, group_id, name, notes, created_at) VALUES (1, 1, '', '', 0)")
+            fun person(id: Int, name: String, role: String, label: String, notes: String) = db.execSQL(
+                "INSERT INTO persons (id, family_id, name, role, role_label, notes, thumbnail_photo_id, sort_order, created_at) " +
+                    "VALUES ($id, 1, '$name', '$role', '$label', '$notes', NULL, $id, 0)"
+            )
+            person(1, "João", "FATHER", "", "Tall")
+            person(2, "Rita", "MOTHER", "", "")
+            person(3, "Ana", "KID", "", "")
+            person(4, "Lu", "OTHER", "Grandma", "")
+            person(5, "Rui", "OTHER", "Coach", "Plays tennis")
+        }
+
+        // Opening with the app's Room setup runs the migration and validates the resulting schema.
+        val room = Room.databaseBuilder(context, AppDatabase::class.java, file.path)
+            .addMigrations(AppDatabase.MIGRATION_1_2)
+            .allowMainThreadQueries()
+            .build()
+        try {
+            val rows = room.openHelper.readableDatabase
+                .query("SELECT name, role, role_label, notes FROM persons ORDER BY id").use { c ->
+                    buildList {
+                        while (c.moveToNext()) add(listOf(c.getString(0), c.getString(1), c.getString(2), c.getString(3)))
+                    }
+                }
+            assertEquals(
+                listOf(
+                    listOf("João", "ADULT", "", "Tall"),
+                    listOf("Rita", "ADULT", "", ""),
+                    listOf("Ana", "CHILD", "", ""),
+                    listOf("Lu", "ADULT", "", "Grandma"),
+                    listOf("Rui", "ADULT", "", "Coach · Plays tennis"),
+                ),
+                rows,
+            )
+            assertEquals(2, room.openHelper.readableDatabase.version)
+        } finally {
+            room.close()
+        }
+    }
+}

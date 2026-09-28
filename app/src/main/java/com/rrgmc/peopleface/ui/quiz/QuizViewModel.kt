@@ -21,7 +21,7 @@ class Question(val person: PersonRow, val image: ImageBitmap?, val options: List
 
 /** Pick 3 other people with different names, preferring the same kind (kid vs. adult) so it isn't too easy. */
 fun pickOptions(target: PersonRow, candidates: List<PersonRow>, count: Int = 4): List<PersonRow> {
-    fun isKid(r: PersonRow) = r.person.role == Role.KID
+    fun isKid(r: PersonRow) = r.person.role == Role.CHILD
     val others = candidates
         .filter { it.person.id != target.person.id && !it.person.name.equals(target.person.name, ignoreCase = true) }
         .distinctBy { it.person.name.lowercase() }

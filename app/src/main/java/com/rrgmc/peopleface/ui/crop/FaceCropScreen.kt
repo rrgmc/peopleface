@@ -313,7 +313,7 @@ private fun PeopleChips(
                         }
                     }
                 },
-                leadingIcon = { Avatar(m.thumb, size = 24.dp) },
+                leadingIcon = { Avatar(m.thumb, m.person.role, size = 24.dp) },
                 trailingIcon = if (m.person.id in saved) {
                     { Icon(Icons.Default.Check, null) }
                 } else null,

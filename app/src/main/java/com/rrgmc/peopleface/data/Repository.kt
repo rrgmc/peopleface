@@ -39,14 +39,13 @@ class Repository(private val db: AppDatabase) {
     fun observeAllPersons() = persons.observeAllRows()
     suspend fun personsWithPhotos(groupId: Long) = persons.rowsWithPhotos(groupId)
 
-    suspend fun addPerson(familyId: Long, name: String, role: Role, roleLabel: String = "", notes: String = ""): Long =
+    suspend fun addPerson(familyId: Long, name: String, role: Role, notes: String = ""): Long =
         db.withTransaction {
             persons.insert(
                 PersonEntity(
                     familyId = familyId,
                     name = name.trim(),
                     role = role,
-                    roleLabel = if (role == Role.OTHER) roleLabel.trim() else "",
                     notes = notes.trim(),
                     sortOrder = persons.maxSortOrder(familyId) + 1,
                 )
@@ -54,7 +53,7 @@ class Repository(private val db: AppDatabase) {
         }
 
     /** A person to be added; blank names are skipped by [addPeople]. */
-    data class NewPerson(val name: String, val role: Role, val roleLabel: String = "")
+    data class NewPerson(val name: String, val role: Role)
 
     /**
      * Adds all non-blank [people] in order. With [familyId] 0 a new family is created in [groupId]
@@ -65,21 +64,20 @@ class Repository(private val db: AppDatabase) {
             val toAdd = people.filter { it.name.isNotBlank() }
             if (familyId == 0L && toAdd.isEmpty() && familyName.isBlank()) return@withTransaction null
             val id = if (familyId != 0L) familyId else addFamily(groupId, familyName)
-            toAdd.forEach { addPerson(id, it.name, it.role, it.roleLabel) }
+            toAdd.forEach { addPerson(id, it.name, it.role) }
             id
         }
 
     /** Adds each non-blank person as a one-person family (without a family name) in [groupId]. */
     suspend fun addIndividuals(groupId: Long, people: List<NewPerson>): Int = db.withTransaction {
         val toAdd = people.filter { it.name.isNotBlank() }
-        toAdd.forEach { addPerson(addFamily(groupId, ""), it.name, it.role, it.roleLabel) }
+        toAdd.forEach { addPerson(addFamily(groupId, ""), it.name, it.role) }
         toAdd.size
     }
 
     suspend fun updatePerson(person: PersonEntity) = persons.update(
         person.copy(
             name = person.name.trim(),
-            roleLabel = if (person.role == Role.OTHER) person.roleLabel.trim() else "",
             notes = person.notes.trim(),
         )
     )

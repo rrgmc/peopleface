@@ -17,6 +17,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.filled.ChildCare
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -44,6 +47,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.rrgmc.peopleface.R
 import com.rrgmc.peopleface.appContainer
 import com.rrgmc.peopleface.data.db.Role
+import com.rrgmc.peopleface.ui.common.roleIcon
 import com.rrgmc.peopleface.ui.common.roleText
 
 /**
@@ -147,34 +151,21 @@ private fun PersonRow(row: PersonRowState, onNameChange: (String) -> Unit, onRem
             )
             IconButton(onClick = onRemove) { Icon(Icons.Default.Close, stringResource(R.string.remove)) }
         }
-        if (row.role == Role.OTHER) {
-            OutlinedTextField(
-                value = row.roleLabel,
-                onValueChange = { row.roleLabel = it },
-                placeholder = { Text(stringResource(R.string.role_label_hint)) },
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(
-                    capitalization = KeyboardCapitalization.Sentences,
-                    imeAction = ImeAction.Next,
-                ),
-                modifier = Modifier.fillMaxWidth().padding(start = 112.dp, end = 48.dp, top = 4.dp),
-            )
-        }
     }
 }
 
+/** Adult / child toggle: one tap switches, which is quick when typing many names. */
 @Composable
 private fun RoleSelector(role: Role, onSelect: (Role) -> Unit) {
-    var open by remember { mutableStateOf(false) }
-    Box {
-        TextButton(onClick = { open = true }, modifier = Modifier.width(112.dp)) {
-            Text(roleText(role), maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
-            Icon(Icons.Default.ArrowDropDown, null)
-        }
-        DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
-            Role.entries.forEach { r ->
-                DropdownMenuItem(text = { Text(roleText(r)) }, onClick = { open = false; onSelect(r) })
-            }
-        }
+    TextButton(
+        onClick = { onSelect(if (role == Role.ADULT) Role.CHILD else Role.ADULT) },
+        modifier = Modifier.width(112.dp),
+    ) {
+        Icon(
+            roleIcon(role),
+            null,
+            Modifier.padding(end = 6.dp).size(18.dp),
+        )
+        Text(roleText(role), maxLines = 1, overflow = TextOverflow.Ellipsis)
     }
 }

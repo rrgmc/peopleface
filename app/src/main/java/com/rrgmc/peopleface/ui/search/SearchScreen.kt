@@ -48,7 +48,7 @@ fun normalizeForSearch(s: String): String =
 /** Every word of the query must appear in one of the person's texts; [extra] is e.g. the family label. */
 fun PersonRow.matches(normalizedQuery: String, extra: String = ""): Boolean =
     normalizedQuery.split(' ').filter { it.isNotBlank() }.all { term ->
-        listOf(person.name, person.roleLabel, person.notes, familyName, groupName, extra)
+        listOf(person.name, person.notes, familyName, groupName, extra)
             .any { normalizeForSearch(it).contains(term) }
     }
 
@@ -98,7 +98,7 @@ fun SearchScreen(onBack: () -> Unit, onOpenPerson: (Long) -> Unit) {
                 val details = listOf(roleText(row.person), labels[row.person.id].orEmpty(), row.groupName)
                     .filter { it.isNotBlank() }
                 ListItem(
-                    leadingContent = { Avatar(row.thumb) },
+                    leadingContent = { Avatar(row.thumb, row.person.role) },
                     headlineContent = { Text(row.person.name) },
                     supportingContent = { Text(details.joinToString(" · ")) },
                     modifier = Modifier.clickable { onOpenPerson(row.person.id) },

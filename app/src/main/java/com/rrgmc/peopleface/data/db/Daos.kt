@@ -16,9 +16,9 @@ private const val PERSON_ROW_SELECT = """
     LEFT JOIN photos ph ON ph.id = p.thumbnail_photo_id
 """
 
-/** Parents first, then kids in their chosen order, then everyone else. */
+/** Adults first, then children in their chosen order. */
 private const val PERSON_ORDER = """
-    CASE p.role WHEN 'FATHER' THEN 0 WHEN 'MOTHER' THEN 1 WHEN 'KID' THEN 2 ELSE 3 END,
+    CASE p.role WHEN 'ADULT' THEN 0 ELSE 1 END,
     p.sort_order, p.id
 """
 

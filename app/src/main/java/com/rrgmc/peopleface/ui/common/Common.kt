@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ChildCare
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
@@ -31,6 +32,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardCapitalization
@@ -44,11 +46,19 @@ import kotlinx.coroutines.withContext
 
 fun ByteArray.toImageBitmap(): ImageBitmap? = BitmapFactory.decodeByteArray(this, 0, size)?.asImageBitmap()
 
+/** Placeholder picture for a person without a photo: a different figure for adults and children. */
+fun roleIcon(role: Role?): ImageVector = if (role == Role.CHILD) Icons.Default.ChildCare else Icons.Default.Person
+
 /** Shows JPEG bytes (decoded synchronously; meant for small thumbnails). */
 @Composable
-fun BlobImage(bytes: ByteArray?, modifier: Modifier = Modifier, contentDescription: String? = null) {
+fun BlobImage(
+    bytes: ByteArray?,
+    modifier: Modifier = Modifier,
+    contentDescription: String? = null,
+    placeholder: ImageVector = Icons.Default.Person,
+) {
     val bitmap = remember(bytes) { bytes?.toImageBitmap() }
-    ImageOrPlaceholder(bitmap, modifier, contentDescription)
+    ImageOrPlaceholder(bitmap, modifier, contentDescription, placeholder)
 }
 
 /** Loads a full-size image off the main thread and shows it. */
@@ -57,22 +67,23 @@ fun AsyncBlobImage(
     key: Any,
     modifier: Modifier = Modifier,
     contentDescription: String? = null,
+    placeholder: ImageVector = Icons.Default.Person,
     load: suspend () -> ByteArray?,
 ) {
     val bitmap by produceState<ImageBitmap?>(null, key) {
         value = withContext(Dispatchers.IO) { load()?.toImageBitmap() }
     }
-    ImageOrPlaceholder(bitmap, modifier, contentDescription)
+    ImageOrPlaceholder(bitmap, modifier, contentDescription, placeholder)
 }
 
 @Composable
-private fun ImageOrPlaceholder(bitmap: ImageBitmap?, modifier: Modifier, contentDescription: String?) {
+private fun ImageOrPlaceholder(bitmap: ImageBitmap?, modifier: Modifier, contentDescription: String?, placeholder: ImageVector) {
     if (bitmap != null) {
         Image(bitmap, contentDescription, modifier, contentScale = ContentScale.Crop)
     } else {
         Box(modifier.background(MaterialTheme.colorScheme.surfaceVariant), contentAlignment = Alignment.Center) {
             Icon(
-                Icons.Default.Person, contentDescription,
+                placeholder, contentDescription,
                 Modifier.fillMaxSize(0.6f),
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -80,21 +91,20 @@ private fun ImageOrPlaceholder(bitmap: ImageBitmap?, modifier: Modifier, content
     }
 }
 
+/** Round thumbnail of a person; without a photo it shows the adult or child figure for [role]. */
 @Composable
-fun Avatar(thumb: ByteArray?, modifier: Modifier = Modifier, size: Dp = 48.dp) {
-    BlobImage(thumb, modifier.size(size).clip(CircleShape))
+fun Avatar(thumb: ByteArray?, role: Role?, modifier: Modifier = Modifier, size: Dp = 48.dp) {
+    BlobImage(thumb, modifier.size(size).clip(CircleShape), placeholder = roleIcon(role))
 }
 
 @Composable
-fun roleText(role: Role, label: String = ""): String = when (role) {
-    Role.FATHER -> stringResource(R.string.role_father)
-    Role.MOTHER -> stringResource(R.string.role_mother)
-    Role.KID -> stringResource(R.string.role_kid)
-    Role.OTHER -> label.ifBlank { stringResource(R.string.role_other) }
+fun roleText(role: Role): String = when (role) {
+    Role.ADULT -> stringResource(R.string.role_adult)
+    Role.CHILD -> stringResource(R.string.role_child)
 }
 
 @Composable
-fun roleText(person: PersonEntity) = roleText(person.role, person.roleLabel)
+fun roleText(person: PersonEntity) = roleText(person.role)
 
 /** A family without its own name is shown by the names of its members. */
 @Composable
