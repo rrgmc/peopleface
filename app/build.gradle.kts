@@ -17,7 +17,21 @@ android {
         versionName = "1.0"
     }
 
+    signingConfigs {
+        // Committed on purpose: every machine and CI run signs debug builds with the same key,
+        // so a new APK installs over the previous one without losing data.
+        getByName("debug") {
+            storeFile = file("debug.keystore")
+            storePassword = "android"
+            keyAlias = "androiddebugkey"
+            keyPassword = "android"
+        }
+    }
+
     buildTypes {
+        debug {
+            signingConfig = signingConfigs.getByName("debug")
+        }
         release {
             isMinifyEnabled = false
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")

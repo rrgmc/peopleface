@@ -35,3 +35,9 @@ app/src/main/java/com/rrgmc/peopleface/
   image/          FaceDetector (ML Kit), CropMath, ImageUtils
   ui/             Compose screens: groups, families, family, person, crop, search, quiz, settings
 ```
+
+## Signing
+
+Debug builds are signed with `app/debug.keystore`, committed on purpose (password `android`, alias `androiddebugkey`),
+so APKs built on any machine or in CI can be installed over each other without losing the app's data.
+It is not meant for Play Store releases.
