@@ -1,5 +1,6 @@
 package com.rrgmc.peopleface.ui.crop
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.awaitEachGesture
@@ -25,6 +26,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.ZoomOutMap
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -136,6 +138,29 @@ fun FaceCropScreen(
         if (q.isEmpty()) people else people.filter { it.matches(q, labels[it.person.id].orEmpty()) }
     }
     val snackbar = remember { SnackbarHostState() }
+
+    // Leaving drops the picture: ask first while there is still something to save.
+    val unfinished = vm.image != null && (!pickMode || vm.faces.isEmpty() || vm.doneFaces.size < vm.faces.size)
+    var confirmLeave by remember { mutableStateOf(false) }
+    val leave = { if (unfinished) confirmLeave = true else onDone() }
+    BackHandler(enabled = unfinished) { confirmLeave = true }
+    if (confirmLeave) {
+        AlertDialog(
+            onDismissRequest = { confirmLeave = false },
+            title = { Text(stringResource(R.string.leave_photo_title)) },
+            text = {
+                Text(
+                    stringResource(if (vm.savedFor.isEmpty()) R.string.leave_photo_nothing_saved else R.string.leave_photo_some_saved)
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = { confirmLeave = false; onDone() }) { Text(stringResource(R.string.leave)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { confirmLeave = false }) { Text(stringResource(R.string.stay)) }
+            },
+        )
+    }
     val scope = rememberCoroutineScope()
     val savedMessage = stringResource(R.string.photo_saved_for)
 
@@ -144,7 +169,7 @@ fun FaceCropScreen(
             TopAppBar(
                 title = { Text(stringResource(if (pickMode) R.string.crop_group_title else R.string.crop_title)) },
                 navigationIcon = {
-                    IconButton(onClick = onDone) {
+                    IconButton(onClick = leave) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back))
                     }
                 },

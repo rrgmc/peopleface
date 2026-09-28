@@ -13,14 +13,16 @@ import com.rrgmc.peopleface.PeopleFaceApp
 import com.rrgmc.peopleface.image.Box
 import com.rrgmc.peopleface.image.CropMath
 import com.rrgmc.peopleface.image.ImageUtils
+import com.rrgmc.peopleface.image.RecentPhotos
 import com.rrgmc.peopleface.ui.common.pickedFile
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 /**
- * Holds the source picture while cutting faces out of it. Only the cropped faces are stored;
- * the temporary copy of the source picture is deleted when leaving.
+ * Holds the source picture while cutting faces out of it. Only the cropped faces go to the database;
+ * the picture itself is kept among the [RecentPhotos] (outside the database) so it can be reopened,
+ * and the temporary copy it was loaded from is deleted.
  */
 class CropViewModel(
     private val app: PeopleFaceApp,
@@ -28,6 +30,7 @@ class CropViewModel(
     personId: Long,
 ) : ViewModel() {
     private val file = pickedFile(app, fileName)
+    private val fromRecent = RecentPhotos.isRecent(fileName)
     private val repo = app.container.repository
     private var bitmap: Bitmap? = null
 
@@ -66,6 +69,7 @@ class CropViewModel(
                 imageWidth = bmp.width
                 imageHeight = bmp.height
                 image = bmp.asImageBitmap()
+                withContext(Dispatchers.IO) { keepAsRecent(bmp) }
                 faces = try {
                     app.container.faceDetector.detect(bmp)
                 } catch (e: Exception) {
@@ -78,6 +82,19 @@ class CropViewModel(
             } finally {
                 loading = false
             }
+        }
+    }
+
+    private fun keepAsRecent(bmp: Bitmap) {
+        try {
+            if (fromRecent) {
+                RecentPhotos.touch(file)
+            } else {
+                RecentPhotos.add(app, bmp)
+                file.delete()
+            }
+        } catch (e: Exception) {
+            Log.w("PeopleFace", "Cannot keep recent photo", e)
         }
     }
 
@@ -133,6 +150,6 @@ class CropViewModel(
 
     override fun onCleared() {
         bitmap = null
-        file.delete()
+        if (!fromRecent) file.delete()
     }
 }
