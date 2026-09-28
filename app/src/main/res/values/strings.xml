@@ -77,7 +77,7 @@
         <item quantity="one">%d face found.</item>
         <item quantity="other">%d faces found.</item>
     </plurals>
-    <string name="crop_hint">Tap a face to select it. Drag to move the square, drag a corner to resize. Pinch to zoom.</string>
+    <string name="crop_hint">Tap a face, drag the square or a corner, pinch to zoom.</string>
     <string name="search_person_hint">Search name…</string>
     <string name="reset_zoom">Reset zoom</string>
     <string name="who_is_this">Who is this?</string>

@@ -78,7 +78,7 @@
         <item quantity="many">%d rostos encontrados.</item>
         <item quantity="other">%d rostos encontrados.</item>
     </plurals>
-    <string name="crop_hint">Toque em um rosto para selecioná-lo. Arraste para mover o quadrado, arraste um canto para redimensionar. Faça pinça para ampliar.</string>
+    <string name="crop_hint">Toque em um rosto, arraste o quadrado ou um canto, faça pinça para ampliar.</string>
     <string name="search_person_hint">Buscar nome…</string>
     <string name="reset_zoom">Restaurar zoom</string>
     <string name="who_is_this">Quem é?</string>

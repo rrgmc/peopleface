@@ -52,6 +52,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
@@ -153,7 +154,8 @@ fun FaceCropScreen(
     ) { padding ->
         Column(Modifier.fillMaxSize().padding(padding).imePadding()) {
             Box(
-                Modifier.weight(1f).fillMaxWidth().background(Color.Black),
+                // Clip, or the zoomed picture is drawn over the controls below.
+                Modifier.weight(1f).fillMaxWidth().clipToBounds().background(Color.Black),
                 contentAlignment = Alignment.Center,
             ) {
                 when {
@@ -175,7 +177,7 @@ fun FaceCropScreen(
                 }
             }
             Column(
-                Modifier.fillMaxWidth().padding(12.dp),
+                Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surface).padding(12.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
