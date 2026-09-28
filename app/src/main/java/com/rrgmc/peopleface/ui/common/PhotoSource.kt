@@ -117,7 +117,8 @@ fun rememberPhotoSource(onPicked: (fileNames: List<String>) -> Unit): PhotoSourc
     )
 }
 
-private fun copyToCache(context: Context, uri: Uri, index: Int): File {
+/** Copies [uri] into [cameraDir], so it can be read after the caller's temporary permission ends. */
+fun copyToCache(context: Context, uri: Uri, index: Int): File {
     val file = File(cameraDir(context), "picked_${System.currentTimeMillis()}_$index")
     try {
         context.contentResolver.openInputStream(uri)?.use { input ->
