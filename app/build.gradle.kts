@@ -17,6 +17,9 @@ android {
         versionName = "1.0"
     }
 
+    // APK file name: peopleface-<version>-<build type>.apk
+    base.archivesName = "peopleface-${defaultConfig.versionName}"
+
     signingConfigs {
         // Committed on purpose: every machine and CI run signs debug builds with the same key,
         // so a new APK installs over the previous one without losing data.
