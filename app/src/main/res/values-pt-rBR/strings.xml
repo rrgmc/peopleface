@@ -81,6 +81,11 @@
     <string name="crop_hint">Toque em um rosto, arraste o quadrado ou um canto, faça pinça para ampliar.</string>
     <string name="search_person_hint">Buscar nome…</string>
     <string name="reset_zoom">Restaurar zoom</string>
+    <string name="leave_photo_title">Sair desta foto?</string>
+    <string name="leave_photo_some_saved">Os rostos já salvos são mantidos; os outros desta foto serão perdidos.</string>
+    <string name="leave_photo_nothing_saved">Nada desta foto foi salvo ainda.</string>
+    <string name="leave">Sair</string>
+    <string name="stay">Ficar</string>
     <string name="who_is_this">Quem é?</string>
     <string name="save_face">Salvar rosto</string>
     <string name="photo_saved_for">Foto salva para %1$s</string>

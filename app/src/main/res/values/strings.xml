@@ -80,6 +80,11 @@
     <string name="crop_hint">Tap a face, drag the square or a corner, pinch to zoom.</string>
     <string name="search_person_hint">Search name…</string>
     <string name="reset_zoom">Reset zoom</string>
+    <string name="leave_photo_title">Leave this photo?</string>
+    <string name="leave_photo_some_saved">The faces you already saved are kept; the others from this photo will be lost.</string>
+    <string name="leave_photo_nothing_saved">Nothing from this photo was saved yet.</string>
+    <string name="leave">Leave</string>
+    <string name="stay">Stay</string>
     <string name="who_is_this">Who is this?</string>
     <string name="save_face">Save face</string>
     <string name="photo_saved_for">Photo saved for %1$s</string>
