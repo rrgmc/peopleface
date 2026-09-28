@@ -16,6 +16,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.AddAPhoto
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.MoreVert
@@ -51,6 +52,8 @@ import com.rrgmc.peopleface.data.db.PersonRow
 import com.rrgmc.peopleface.ui.common.Avatar
 import com.rrgmc.peopleface.ui.common.ConfirmDialog
 import com.rrgmc.peopleface.ui.common.NameNotesDialog
+import com.rrgmc.peopleface.ui.common.PhotoSourceMenu
+import com.rrgmc.peopleface.ui.common.rememberPhotoSource
 import com.rrgmc.peopleface.ui.common.familyTitle
 import kotlinx.coroutines.launch
 
@@ -63,6 +66,7 @@ fun FamilyListScreen(
     onOpenPerson: (Long) -> Unit,
     onQuiz: (Long) -> Unit,
     onNewFamily: (groupId: Long) -> Unit,
+    onCropGroupPhoto: (groupId: Long, fileName: String) -> Unit,
 ) {
     val repo = appContainer().repository
     val scope = rememberCoroutineScope()
@@ -72,6 +76,8 @@ fun FamilyListScreen(
     val membersByFamily = remember(persons) { persons.groupBy { it.person.familyId } }
 
     var menu by remember { mutableStateOf(false) }
+    var photoMenu by remember { mutableStateOf(false) }
+    val photoSource = rememberPhotoSource { onCropGroupPhoto(groupId, it) }
     var editing by rememberSaveable { mutableStateOf(false) }
     var deleting by rememberSaveable { mutableStateOf(false) }
 
@@ -85,6 +91,13 @@ fun FamilyListScreen(
                     }
                 },
                 actions = {
+                    if (persons.isNotEmpty()) {
+                        PhotoSourceMenu(photoSource, photoMenu, { photoMenu = false }) {
+                            IconButton(onClick = { photoMenu = true }) {
+                                Icon(Icons.Default.AddAPhoto, stringResource(R.string.faces_from_group_photo))
+                            }
+                        }
+                    }
                     IconButton(onClick = { onQuiz(groupId) }) { Icon(Icons.Default.Quiz, stringResource(R.string.quiz)) }
                     Box {
                         IconButton(onClick = { menu = true }) { Icon(Icons.Default.MoreVert, null) }
