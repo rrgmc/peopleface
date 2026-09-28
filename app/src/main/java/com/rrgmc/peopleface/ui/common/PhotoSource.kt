@@ -46,40 +46,51 @@ fun pickedFile(context: Context, name: String) =
 
 class PhotoSource(val pickFromGallery: () -> Unit, val takePhoto: () -> Unit, val pickRecent: () -> Unit)
 
+/** How many pictures can be picked from the gallery at once. */
+const val MAX_PICKED_PHOTOS = 10
+
 /**
- * Gallery / camera / recent-photo pickers. [onPicked] receives a name for [pickedFile]: a temporary file
- * inside [cameraDir], or a recent photo.
+ * Gallery / camera / recent-photo pickers. [onPicked] receives names for [pickedFile]: temporary files
+ * inside [cameraDir], or a recent photo. The gallery can return several (up to [MAX_PICKED_PHOTOS]).
  */
 @Composable
-fun rememberPhotoSource(onPicked: (fileName: String) -> Unit): PhotoSource {
+fun rememberPhotoSource(onPicked: (fileNames: List<String>) -> Unit): PhotoSource {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var pendingCamera by rememberSaveable { mutableStateOf<String?>(null) }
     var showRecent by rememberSaveable { mutableStateOf(false) }
     if (showRecent) {
         RecentPhotosDialog(
-            onPick = { showRecent = false; onPicked(it.name) },
+            onPick = { showRecent = false; onPicked(listOf(it.name)) },
             onDismiss = { showRecent = false },
         )
     }
     val openError = stringResource(R.string.image_load_error)
 
-    val gallery = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
-        if (uri == null) return@rememberLauncherForActivityResult
+    val gallery = rememberLauncherForActivityResult(
+        ActivityResultContracts.PickMultipleVisualMedia(MAX_PICKED_PHOTOS)
+    ) { uris ->
+        if (uris.isEmpty()) return@rememberLauncherForActivityResult
         scope.launch {
-            try {
-                onPicked(withContext(Dispatchers.IO) { copyToCache(context, uri) }.name)
-            } catch (e: Exception) {
-                Log.e("PeopleFace", "Cannot copy picked image $uri", e)
-                Toast.makeText(context, openError, Toast.LENGTH_LONG).show()
+            val names = withContext(Dispatchers.IO) {
+                uris.mapIndexedNotNull { i, uri ->
+                    try {
+                        copyToCache(context, uri, i).name
+                    } catch (e: Exception) {
+                        Log.e("PeopleFace", "Cannot copy picked image $uri", e)
+                        null
+                    }
+                }
             }
+            if (names.size < uris.size) Toast.makeText(context, openError, Toast.LENGTH_LONG).show()
+            if (names.isNotEmpty()) onPicked(names)
         }
     }
     val camera = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { ok ->
         val path = pendingCamera ?: return@rememberLauncherForActivityResult
         pendingCamera = null
         val file = File(path)
-        if (ok && file.length() > 0) onPicked(file.name) else file.delete()
+        if (ok && file.length() > 0) onPicked(listOf(file.name)) else file.delete()
     }
     return PhotoSource(
         pickFromGallery = {
@@ -94,8 +105,8 @@ fun rememberPhotoSource(onPicked: (fileName: String) -> Unit): PhotoSource {
     )
 }
 
-private fun copyToCache(context: Context, uri: Uri): File {
-    val file = File(cameraDir(context), "picked_${System.currentTimeMillis()}")
+private fun copyToCache(context: Context, uri: Uri, index: Int): File {
+    val file = File(cameraDir(context), "picked_${System.currentTimeMillis()}_$index")
     try {
         context.contentResolver.openInputStream(uri)?.use { input ->
             file.outputStream().use { input.copyTo(it) }

@@ -3,6 +3,7 @@ package com.rrgmc.peopleface.ui.crop
 import android.graphics.Bitmap
 import android.util.Log
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.ImageBitmap
@@ -15,24 +16,38 @@ import com.rrgmc.peopleface.image.CropMath
 import com.rrgmc.peopleface.image.ImageUtils
 import com.rrgmc.peopleface.image.RecentPhotos
 import com.rrgmc.peopleface.ui.common.pickedFile
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.io.File
 
 /**
- * Holds the source picture while cutting faces out of it. Only the cropped faces go to the database;
- * the picture itself is kept among the [RecentPhotos] (outside the database) so it can be reopened,
- * and the temporary copy it was loaded from is deleted.
+ * Cuts faces out of one or more pictures, one picture at a time. Only the cropped faces go to the
+ * database. Every picture is first turned into one of the [RecentPhotos] (an upright, downscaled copy
+ * outside the database), in the background and in order, so pictures that were not reached can still be
+ * reopened later; the temporary copies they were loaded from are deleted.
  */
 class CropViewModel(
     private val app: PeopleFaceApp,
-    fileName: String,
-    personId: Long,
+    fileNames: List<String>,
+    private val personId: Long,
 ) : ViewModel() {
-    private val file = pickedFile(app, fileName)
-    private val fromRecent = RecentPhotos.isRecent(fileName)
     private val repo = app.container.repository
+    private val sources: List<File> = fileNames.map { pickedFile(app, it) }
+
+    /** Recent-photo file for each picture, or the error that prevented making it. */
+    private val prepared = List(sources.size) { CompletableDeferred<Result<File>>() }
     private var bitmap: Bitmap? = null
+    private var loadJob: Job? = null
+
+    val photoCount = sources.size
+    var photoIndex by mutableIntStateOf(0)
+        private set
+    val hasNextPhoto get() = photoIndex < photoCount - 1
+    val remainingPhotos get() = photoCount - 1 - photoIndex
 
     var image by mutableStateOf<ImageBitmap?>(null)
         private set
@@ -58,26 +73,62 @@ class CropViewModel(
 
     /** Who the next saved crop belongs to. */
     var target by mutableStateOf(personId.takeIf { it != 0L })
+    /** Everyone who got a face during this session (across all pictures). */
     var savedFor by mutableStateOf<Set<Long>>(emptySet())
         private set
 
     init {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
+            sources.forEachIndexed { i, source ->
+                if (!isActive) return@launch // screen left: don't keep converting
+                prepared[i].complete(runCatching { toRecent(source) })
+            }
+        }
+        load(0)
+    }
+
+    private fun toRecent(source: File): File {
+        if (RecentPhotos.isRecent(source.name)) {
+            RecentPhotos.touch(source)
+            return source
+        }
+        try {
+            return RecentPhotos.add(app, ImageUtils.decode(source))
+        } finally {
+            source.delete()
+        }
+    }
+
+    private fun load(index: Int) {
+        loadJob?.cancel()
+        photoIndex = index
+        bitmap = null
+        image = null
+        faces = emptyList()
+        selectedFace = null
+        crop = null
+        doneFaces = emptySet()
+        error = null
+        loading = true
+        if (personId == 0L) target = null
+        loadJob = viewModelScope.launch {
             try {
+                val file = prepared[index].await().getOrThrow()
                 val bmp = withContext(Dispatchers.IO) { ImageUtils.decode(file) }
                 bitmap = bmp
                 imageWidth = bmp.width
                 imageHeight = bmp.height
                 image = bmp.asImageBitmap()
-                withContext(Dispatchers.IO) { keepAsRecent(bmp) }
                 faces = try {
                     app.container.faceDetector.detect(bmp)
                 } catch (e: Exception) {
                     emptyList()
                 }
                 if (faces.isNotEmpty()) selectFace(0) else crop = CropMath.defaultCrop(imageWidth, imageHeight)
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
             } catch (e: Throwable) {
-                Log.e("PeopleFace", "Cannot open ${file.name}", e)
+                Log.e("PeopleFace", "Cannot open picture ${index + 1}", e)
                 error = e.message ?: e.javaClass.simpleName
             } finally {
                 loading = false
@@ -85,17 +136,8 @@ class CropViewModel(
         }
     }
 
-    private fun keepAsRecent(bmp: Bitmap) {
-        try {
-            if (fromRecent) {
-                RecentPhotos.touch(file)
-            } else {
-                RecentPhotos.add(app, bmp)
-                file.delete()
-            }
-        } catch (e: Exception) {
-            Log.w("PeopleFace", "Cannot keep recent photo", e)
-        }
+    fun nextPhoto() {
+        if (hasNextPhoto) load(photoIndex + 1)
     }
 
     fun selectFace(index: Int) {
@@ -150,6 +192,7 @@ class CropViewModel(
 
     override fun onCleared() {
         bitmap = null
-        if (!fromRecent) file.delete()
+        // Temporary copies not yet turned into recent photos (the background job stops with the scope).
+        sources.filterNot { RecentPhotos.isRecent(it.name) }.forEach { it.delete() }
     }
 }

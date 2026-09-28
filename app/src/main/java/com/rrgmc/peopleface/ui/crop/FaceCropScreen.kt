@@ -23,6 +23,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.ZoomOutMap
@@ -35,6 +36,7 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -114,7 +116,7 @@ private const val GESTURE_ZOOM = 4
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FaceCropScreen(
-    fileName: String,
+    fileNames: List<String>,
     personId: Long,
     familyId: Long,
     groupId: Long,
@@ -122,7 +124,7 @@ fun FaceCropScreen(
 ) {
     val app = LocalContext.current.applicationContext as PeopleFaceApp
     val repo = app.container.repository
-    val vm: CropViewModel = viewModel { CropViewModel(app, fileName, personId) }
+    val vm: CropViewModel = viewModel { CropViewModel(app, fileNames, personId) }
     val pickMode = familyId != 0L || groupId != 0L
     val people by remember(familyId, groupId) {
         when {
@@ -139,8 +141,9 @@ fun FaceCropScreen(
     }
     val snackbar = remember { SnackbarHostState() }
 
-    // Leaving drops the picture: ask first while there is still something to save.
-    val unfinished = vm.image != null && (!pickMode || vm.faces.isEmpty() || vm.doneFaces.size < vm.faces.size)
+    // Leaving drops the picture(s): ask first while there is still something to save.
+    val photoUnfinished = vm.image != null && (!pickMode || vm.faces.isEmpty() || vm.doneFaces.size < vm.faces.size)
+    val unfinished = photoUnfinished || vm.hasNextPhoto
     var confirmLeave by remember { mutableStateOf(false) }
     val leave = { if (unfinished) confirmLeave = true else onDone() }
     BackHandler(enabled = unfinished) { confirmLeave = true }
@@ -149,8 +152,10 @@ fun FaceCropScreen(
             onDismissRequest = { confirmLeave = false },
             title = { Text(stringResource(R.string.leave_photo_title)) },
             text = {
+                val remaining = vm.remainingPhotos
                 Text(
-                    stringResource(if (vm.savedFor.isEmpty()) R.string.leave_photo_nothing_saved else R.string.leave_photo_some_saved)
+                    stringResource(if (vm.savedFor.isEmpty()) R.string.leave_photo_nothing_saved else R.string.leave_photo_some_saved) +
+                        if (remaining > 0) "\n\n" + pluralStringResource(R.plurals.leave_photos_remaining, remaining, remaining) else ""
                 )
             },
             confirmButton = {
@@ -167,14 +172,27 @@ fun FaceCropScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(stringResource(if (pickMode) R.string.crop_group_title else R.string.crop_title)) },
+                title = {
+                    Column {
+                        Text(stringResource(if (pickMode) R.string.crop_group_title else R.string.crop_title))
+                        if (vm.photoCount > 1) {
+                            Text(
+                                stringResource(R.string.photo_n_of_m, vm.photoIndex + 1, vm.photoCount),
+                                style = MaterialTheme.typography.bodySmall,
+                            )
+                        }
+                    }
+                },
                 navigationIcon = {
                     IconButton(onClick = leave) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back))
                     }
                 },
                 actions = {
-                    if (pickMode) TextButton(onClick = onDone) { Text(stringResource(R.string.done)) }
+                    // "Done" is deliberate for the current picture, but ask if other pictures would be skipped.
+                    if (pickMode) TextButton(onClick = { if (vm.hasNextPhoto) confirmLeave = true else onDone() }) {
+                        Text(stringResource(R.string.done))
+                    }
                 },
             )
         },
@@ -239,23 +257,33 @@ fun FaceCropScreen(
                 if (pickMode) {
                     PeopleChips(shown, labels, selected = vm.target, saved = vm.savedFor) { vm.target = it }
                 }
-                Button(
-                    enabled = vm.crop != null && vm.target != null && !vm.saving,
-                    onClick = {
-                        vm.save { savedId ->
-                            if (pickMode) {
-                                val name = people.firstOrNull { it.person.id == savedId }?.person?.name.orEmpty()
-                                vm.advance()
-                                filter = ""
-                                scope.launch { snackbar.showSnackbar(savedMessage.format(name)) }
-                            } else {
-                                onDone()
-                            }
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    if (vm.hasNextPhoto) {
+                        OutlinedButton(onClick = { filter = ""; vm.nextPhoto() }, enabled = !vm.saving) {
+                            Text(stringResource(R.string.next_photo))
+                            Icon(Icons.AutoMirrored.Filled.ArrowForward, null, Modifier.padding(start = 4.dp))
                         }
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    Text(stringResource(R.string.save_face))
+                    }
+                    Button(
+                        enabled = vm.crop != null && vm.target != null && !vm.saving,
+                        onClick = {
+                            vm.save { savedId ->
+                                when {
+                                    pickMode -> {
+                                        val name = people.firstOrNull { it.person.id == savedId }?.person?.name.orEmpty()
+                                        vm.advance()
+                                        filter = ""
+                                        scope.launch { snackbar.showSnackbar(savedMessage.format(name)) }
+                                    }
+                                    vm.hasNextPhoto -> vm.nextPhoto() // one person, several pictures
+                                    else -> onDone()
+                                }
+                            }
+                        },
+                        modifier = Modifier.weight(1f),
+                    ) {
+                        Text(stringResource(R.string.save_face))
+                    }
                 }
             }
         }

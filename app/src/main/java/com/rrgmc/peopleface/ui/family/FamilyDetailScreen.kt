@@ -60,7 +60,7 @@ fun FamilyDetailScreen(
     onBack: () -> Unit,
     onOpenPerson: (Long) -> Unit,
     onAddPeople: (groupId: Long) -> Unit,
-    onCropGroupPhoto: (fileName: String) -> Unit,
+    onCropGroupPhoto: (fileNames: List<String>) -> Unit,
 ) {
     val repo = appContainer().repository
     val scope = rememberCoroutineScope()

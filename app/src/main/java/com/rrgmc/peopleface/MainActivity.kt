@@ -59,8 +59,8 @@ object Routes {
      * Crop a face for [personId], or (with [familyId] / [groupId]) for anyone of that family / group.
      * [fileName] is a temporary copy of the picture in the app's cache (see rememberPhotoSource).
      */
-    fun crop(fileName: String, personId: Long = 0, familyId: Long = 0, groupId: Long = 0) =
-        "crop?file=${Uri.encode(fileName)}&personId=$personId&familyId=$familyId&groupId=$groupId"
+    fun crop(fileNames: List<String>, personId: Long = 0, familyId: Long = 0, groupId: Long = 0) =
+        "crop?files=${Uri.encode(fileNames.joinToString(","))}&personId=$personId&familyId=$familyId&groupId=$groupId"
 }
 
 @Composable
@@ -85,7 +85,7 @@ private fun AppNavigation() {
                 onOpenPerson = { id -> nav.navigate(Routes.person(id)) },
                 onQuiz = { id -> nav.navigate(Routes.quiz(id)) },
                 onNewFamily = { groupId -> nav.navigate(Routes.addPeople(groupId)) },
-                onCropGroupPhoto = { groupId, file -> nav.navigate(Routes.crop(file, groupId = groupId)) },
+                onCropGroupPhoto = { groupId, files -> nav.navigate(Routes.crop(files, groupId = groupId)) },
             )
         }
         composable(
@@ -120,7 +120,7 @@ private fun AppNavigation() {
                 onBack = back,
                 onOpenPerson = { id -> nav.navigate(Routes.person(id)) },
                 onAddPeople = { groupId -> nav.navigate(Routes.addPeople(groupId, familyId)) },
-                onCropGroupPhoto = { file -> nav.navigate(Routes.crop(file, familyId = familyId)) },
+                onCropGroupPhoto = { files -> nav.navigate(Routes.crop(files, familyId = familyId)) },
             )
         }
         composable("person/{id}", listOf(navArgument("id") { type = NavType.LongType })) {
@@ -128,13 +128,13 @@ private fun AppNavigation() {
             PersonDetailScreen(
                 personId = personId,
                 onBack = back,
-                onCrop = { file -> nav.navigate(Routes.crop(file, personId = personId)) },
+                onCrop = { files -> nav.navigate(Routes.crop(files, personId = personId)) },
             )
         }
         composable(
-            "crop?file={file}&personId={personId}&familyId={familyId}&groupId={groupId}",
+            "crop?files={files}&personId={personId}&familyId={familyId}&groupId={groupId}",
             listOf(
-                navArgument("file") { type = NavType.StringType },
+                navArgument("files") { type = NavType.StringType },
                 navArgument("personId") { type = NavType.LongType; defaultValue = 0L },
                 navArgument("familyId") { type = NavType.LongType; defaultValue = 0L },
                 navArgument("groupId") { type = NavType.LongType; defaultValue = 0L },
@@ -142,7 +142,7 @@ private fun AppNavigation() {
         ) {
             val args = it.arguments!!
             FaceCropScreen(
-                fileName = args.getString("file")!!,
+                fileNames = args.getString("files")!!.split(",").filter { it.isNotBlank() },
                 personId = args.getLong("personId"),
                 familyId = args.getLong("familyId"),
                 groupId = args.getLong("groupId"),
