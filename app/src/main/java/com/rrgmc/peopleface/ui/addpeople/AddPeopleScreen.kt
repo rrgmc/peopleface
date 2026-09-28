@@ -55,17 +55,28 @@ import com.rrgmc.peopleface.ui.common.roleText
 fun AddPeopleScreen(
     groupId: Long,
     familyId: Long,
+    individuals: Boolean,
     onBack: () -> Unit,
     onSaved: (Long?) -> Unit,
 ) {
     val repo = appContainer().repository
-    val vm: AddPeopleViewModel = viewModel { AddPeopleViewModel(repo, groupId, familyId) }
-    val newFamily = familyId == 0L
+    val vm: AddPeopleViewModel = viewModel { AddPeopleViewModel(repo, groupId, familyId, individuals) }
+    val newFamily = familyId == 0L && !individuals
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(stringResource(if (newFamily) R.string.new_family else R.string.add_people)) },
+                title = {
+                    Text(
+                        stringResource(
+                            when {
+                                individuals -> R.string.add_individuals
+                                newFamily -> R.string.new_family
+                                else -> R.string.add_people
+                            }
+                        )
+                    )
+                },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back))
@@ -102,7 +113,7 @@ fun AddPeopleScreen(
             }
             item {
                 Text(
-                    stringResource(R.string.add_people_hint),
+                    stringResource(if (individuals) R.string.add_individuals_hint else R.string.add_people_hint),
                     style = MaterialTheme.typography.bodySmall,
                     modifier = Modifier.padding(top = 4.dp),
                 )

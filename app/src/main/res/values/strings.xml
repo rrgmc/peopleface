@@ -41,6 +41,10 @@
     </plurals>
 
     <!-- Families -->
+    <string name="individuals">Individuals</string>
+    <string name="open_family">Family</string>
+    <string name="add_individuals">Add individuals</string>
+    <string name="add_individuals_hint">Each name is added to this group as a person on their own. Empty rows are ignored.</string>
     <string name="new_family">New family</string>
     <string name="edit_family">Edit family</string>
     <string name="family_name_hint">Family name (optional)</string>

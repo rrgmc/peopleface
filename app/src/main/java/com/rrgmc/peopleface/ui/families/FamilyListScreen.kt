@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -21,6 +22,7 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Quiz
+import androidx.compose.material.icons.filled.PersonAdd
 import androidx.compose.material3.Card
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -66,6 +68,7 @@ fun FamilyListScreen(
     onOpenPerson: (Long) -> Unit,
     onQuiz: (Long) -> Unit,
     onNewFamily: (groupId: Long) -> Unit,
+    onAddIndividuals: (groupId: Long) -> Unit,
     onCropGroupPhoto: (groupId: Long, fileNames: List<String>) -> Unit,
 ) {
     val repo = appContainer().repository
@@ -102,6 +105,11 @@ fun FamilyListScreen(
                     Box {
                         IconButton(onClick = { menu = true }) { Icon(Icons.Default.MoreVert, null) }
                         DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.add_individuals)) },
+                                leadingIcon = { Icon(Icons.Default.PersonAdd, null) },
+                                onClick = { menu = false; onAddIndividuals(groupId) },
+                            )
                             DropdownMenuItem(
                                 text = { Text(stringResource(R.string.edit)) },
                                 leadingIcon = { Icon(Icons.Default.Edit, null) },
@@ -146,7 +154,21 @@ fun FamilyListScreen(
                     )
                 }
             }
-            items(list.orEmpty(), key = { it.id }) { family ->
+            // One-person families are shown together in a single card at the top.
+            val (singleFamilies, otherFamilies) = list.orEmpty().partition { membersByFamily[it.id].orEmpty().size == 1 }
+            if (singleFamilies.isNotEmpty()) {
+                item(key = "individuals") {
+                    FamilyCard(
+                        title = stringResource(R.string.individuals),
+                        members = singleFamilies.flatMap { membersByFamily[it.id].orEmpty() }
+                            .sortedBy { it.person.name.lowercase() },
+                        onClick = null,
+                        onPersonClick = onOpenPerson,
+                        onAdd = { onAddIndividuals(groupId) },
+                    )
+                }
+            }
+            items(otherFamilies, key = { it.id }) { family ->
                 val members = membersByFamily[family.id].orEmpty()
                 FamilyCard(
                     title = familyTitle(family.name, members.map { it.person.name }),
@@ -185,12 +207,24 @@ fun FamilyListScreen(
 private fun FamilyCard(
     title: String,
     members: List<PersonRow>,
-    onClick: () -> Unit,
+    onClick: (() -> Unit)?,
     onPersonClick: (Long) -> Unit,
+    onAdd: (() -> Unit)? = null,
 ) {
-    Card(onClick = onClick, modifier = Modifier.fillMaxWidth()) {
+    val content: @Composable () -> Unit = {
         Column(Modifier.padding(12.dp)) {
-            Text(title, style = MaterialTheme.typography.titleMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    title,
+                    style = MaterialTheme.typography.titleMedium,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f),
+                )
+                if (onAdd != null) {
+                    IconButton(onClick = onAdd) { Icon(Icons.Default.PersonAdd, stringResource(R.string.add_individuals)) }
+                }
+            }
             if (members.isNotEmpty()) {
                 FlowRow(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -215,5 +249,10 @@ private fun FamilyCard(
                 }
             }
         }
+    }
+    if (onClick != null) {
+        Card(onClick = onClick, modifier = Modifier.fillMaxWidth()) { content() }
+    } else {
+        Card(modifier = Modifier.fillMaxWidth()) { content() }
     }
 }

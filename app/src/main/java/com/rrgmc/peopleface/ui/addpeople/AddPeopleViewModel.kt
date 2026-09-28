@@ -18,14 +18,18 @@ class PersonRowState(val key: Int, role: Role) {
 }
 
 /**
- * Adds several people at once, to an existing family ([familyId] != 0) or to a new family in [groupId].
+ * Adds several people at once: to an existing family ([familyId] != 0), to a new family in [groupId], or
+ * with [individuals] each person as their own one-person family in [groupId].
  * Rows with a blank name are ignored.
  */
 class AddPeopleViewModel(
     private val repo: Repository,
     private val groupId: Long,
     val familyId: Long,
+    val individuals: Boolean = false,
 ) : ViewModel() {
+    /** Role of new rows (each row has its own role selector). */
+    private val defaultRole = Role.KID
     private var nextKey = 0
 
     val rows = mutableStateListOf<PersonRowState>()
@@ -35,20 +39,23 @@ class AddPeopleViewModel(
     var saving by mutableStateOf(false)
         private set
 
-    val canSave get() = !saving && (rows.any { it.name.isNotBlank() } || (familyId == 0L && familyName.isNotBlank()))
+    val canSave get() = !saving &&
+        (rows.any { it.name.isNotBlank() } || (familyId == 0L && !individuals && familyName.isNotBlank()))
 
     init {
         viewModelScope.launch {
-            // Suggest the parents the family doesn't have yet, then a kid.
-            val existing = if (familyId != 0L) repo.observePersonsInFamily(familyId).first().map { it.person.role } else emptyList()
-            if (Role.FATHER !in existing) addRow(Role.FATHER)
-            if (Role.MOTHER !in existing) addRow(Role.MOTHER)
-            addRow(Role.KID)
+            if (!individuals) {
+                // Suggest the parents the family doesn't have yet, then a kid.
+                val existing = if (familyId != 0L) repo.observePersonsInFamily(familyId).first().map { it.person.role } else emptyList()
+                if (Role.FATHER !in existing) addRow(Role.FATHER)
+                if (Role.MOTHER !in existing) addRow(Role.MOTHER)
+            }
+            addRow(defaultRole)
             loading = false
         }
     }
 
-    fun addRow(role: Role = Role.KID) {
+    fun addRow(role: Role = defaultRole) {
         rows += PersonRowState(nextKey++, role)
     }
 
@@ -60,16 +67,21 @@ class AddPeopleViewModel(
     fun onNameChange(row: PersonRowState, name: String) {
         row.name = name
         // Always keep an empty row at the end, so the next kid can just be typed in.
-        if (row === rows.lastOrNull() && name.isNotBlank()) addRow(Role.KID)
+        if (row === rows.lastOrNull() && name.isNotBlank()) addRow()
     }
 
-    /** [onSaved] receives the family id, or null if nothing was added. */
+    /** [onSaved] receives the family id, or null if nothing was added or when adding individuals. */
     fun save(onSaved: (Long?) -> Unit) {
         saving = true
         viewModelScope.launch {
             try {
                 val people = rows.map { Repository.NewPerson(it.name, it.role, it.roleLabel) }
-                onSaved(repo.addPeople(groupId, familyId, familyName, people))
+                if (individuals) {
+                    repo.addIndividuals(groupId, people)
+                    onSaved(null)
+                } else {
+                    onSaved(repo.addPeople(groupId, familyId, familyName, people))
+                }
             } finally {
                 saving = false
             }

@@ -41,6 +41,10 @@
     </plurals>
 
     <!-- Families -->
+    <string name="individuals">Pessoas avulsas</string>
+    <string name="open_family">Família</string>
+    <string name="add_individuals">Adicionar pessoas avulsas</string>
+    <string name="add_individuals_hint">Cada nome é adicionado a este grupo como uma pessoa avulsa. Linhas vazias são ignoradas.</string>
     <string name="new_family">Nova família</string>
     <string name="edit_family">Editar família</string>
     <string name="family_name_hint">Nome da família (opcional)</string>

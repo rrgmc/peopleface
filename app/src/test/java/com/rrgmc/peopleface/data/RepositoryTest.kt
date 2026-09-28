@@ -84,6 +84,21 @@ class RepositoryTest {
     }
 
     @Test
+    fun addIndividualsMakesOneFamilyEach() = runTest {
+        val group = repo.addGroup("Club")
+        val added = repo.addIndividuals(group, listOf(
+            Repository.NewPerson("Ana", Role.OTHER),
+            Repository.NewPerson(" ", Role.OTHER),
+            Repository.NewPerson("Rui", Role.OTHER, roleLabel = "Coach"),
+        ))
+        assertEquals(2, added)
+        val rows = repo.observePersonsInGroup(group).first()
+        assertEquals(setOf("Ana", "Rui"), rows.map { it.person.name }.toSet())
+        assertEquals(2, rows.map { it.person.familyId }.distinct().size)
+        assertEquals(2, repo.observeGroups().first().single().familyCount)
+    }
+
+    @Test
     fun addPeopleWithNothingCreatesNoFamily() = runTest {
         val group = repo.addGroup("School")
         assertNull(repo.addPeople(group, 0, " ", listOf(Repository.NewPerson("", Role.KID))))
