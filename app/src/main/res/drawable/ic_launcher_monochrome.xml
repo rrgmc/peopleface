@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Single-colour version for themed icons (Android 13+); only the alpha is used. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <group
+        android:pivotX="54"
+        android:pivotY="54"
+        android:scaleX="0.85"
+        android:scaleY="0.85"
+        android:translateX="2">
+        <path
+            android:fillAlpha="0.6"
+            android:fillColor="#FFFFFF"
+            android:pathData="M36,30.5a8,8 0,1 1,0 16a8,8 0,1 1,0 -16zM22,64C22,55 28,50.5 36,50.5C44,50.5 50,55 50,64Z" />
+        <!-- front person, shoulder cut short to leave a gap before the tag -->
+        <path
+            android:fillColor="#FFFFFF"
+            android:pathData="M50,31.5a10.5,10.5 0,1 1,0 21a10.5,10.5 0,1 1,0 -21zM31,73C31,61.5 39.5,56 50,56C51.91,56 53.76,56.18 55.5,56.55L55.5,73Z" />
+        <!-- tag with the text lines cut out -->
+        <path
+            android:fillColor="#FFFFFF"
+            android:fillType="evenOdd"
+            android:pathData="M61.5,60L76.5,60A3.5,3.5 0,0 1,80 63.5L80,72.5A3.5,3.5 0,0 1,76.5 76L61.5,76A3.5,3.5 0,0 1,58 72.5L58,63.5A3.5,3.5 0,0 1,61.5 60ZM62.75,67.5L75.25,67.5A1.25,1.25 0,0 1,75.25 70L62.75,70A1.25,1.25 0,0 1,62.75 67.5ZM62.75,71.5L69.25,71.5A1.25,1.25 0,0 1,69.25 74L62.75,74A1.25,1.25 0,0 1,62.75 71.5Z" />
+    </group>
+</vector>
