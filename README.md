@@ -24,7 +24,9 @@ Requirements: JDK 17 and the Android SDK (platform 35).
 ./gradlew testDebugUnitTest
 ```
 
-The GitHub Actions workflow (`Build APK`) only runs when triggered manually from the Actions tab and uploads the debug APK as an artifact.
+The GitHub Actions workflow (`Build APK`) only runs when triggered manually from the Actions tab.
+It publishes the debug APK as the `latest` release (replaced on every run), so it can be downloaded
+from the repository's Releases page, including from a phone.
 
 ## Structure
 
