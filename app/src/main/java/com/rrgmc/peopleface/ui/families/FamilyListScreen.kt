@@ -66,7 +66,7 @@ fun FamilyListScreen(
     onOpenPerson: (Long) -> Unit,
     onQuiz: (Long) -> Unit,
     onNewFamily: (groupId: Long) -> Unit,
-    onCropGroupPhoto: (groupId: Long, fileName: String) -> Unit,
+    onCropGroupPhoto: (groupId: Long, fileNames: List<String>) -> Unit,
 ) {
     val repo = appContainer().repository
     val scope = rememberCoroutineScope()

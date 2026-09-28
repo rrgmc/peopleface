@@ -90,6 +90,13 @@
     <string name="leave_photo_nothing_saved">Nada desta foto foi salvo ainda.</string>
     <string name="leave">Sair</string>
     <string name="stay">Ficar</string>
+    <string name="next_photo">Próxima foto</string>
+    <string name="photo_n_of_m">Foto %1$d de %2$d</string>
+    <plurals name="leave_photos_remaining">
+        <item quantity="one">%d outra foto selecionada será pulada (ela fica em Fotos recentes).</item>
+        <item quantity="many">%d outras fotos selecionadas serão puladas (elas ficam em Fotos recentes).</item>
+        <item quantity="other">%d outras fotos selecionadas serão puladas (elas ficam em Fotos recentes).</item>
+    </plurals>
     <string name="who_is_this">Quem é?</string>
     <string name="save_face">Salvar rosto</string>
     <string name="photo_saved_for">Foto salva para %1$s</string>

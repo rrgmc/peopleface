@@ -63,7 +63,7 @@ import kotlinx.coroutines.launch
 fun PersonDetailScreen(
     personId: Long,
     onBack: () -> Unit,
-    onCrop: (fileName: String) -> Unit,
+    onCrop: (fileNames: List<String>) -> Unit,
 ) {
     val repo = appContainer().repository
     val scope = rememberCoroutineScope()

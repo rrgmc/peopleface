@@ -89,6 +89,12 @@
     <string name="leave_photo_nothing_saved">Nothing from this photo was saved yet.</string>
     <string name="leave">Leave</string>
     <string name="stay">Stay</string>
+    <string name="next_photo">Next photo</string>
+    <string name="photo_n_of_m">Photo %1$d of %2$d</string>
+    <plurals name="leave_photos_remaining">
+        <item quantity="one">%d more selected photo will be skipped (it stays in Recent photos).</item>
+        <item quantity="other">%d more selected photos will be skipped (they stay in Recent photos).</item>
+    </plurals>
     <string name="who_is_this">Who is this?</string>
     <string name="save_face">Save face</string>
     <string name="photo_saved_for">Photo saved for %1$s</string>
