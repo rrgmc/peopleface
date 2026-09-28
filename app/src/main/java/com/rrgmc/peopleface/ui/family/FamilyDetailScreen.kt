@@ -1,28 +1,26 @@
 package com.rrgmc.peopleface.ui.family
 
-import android.net.Uri
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AddAPhoto
-import androidx.compose.material.icons.filled.ChildCare
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PersonAdd
-import androidx.compose.material3.AssistChip
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -49,20 +47,20 @@ import com.rrgmc.peopleface.data.db.Role
 import com.rrgmc.peopleface.ui.common.Avatar
 import com.rrgmc.peopleface.ui.common.ConfirmDialog
 import com.rrgmc.peopleface.ui.common.NameNotesDialog
-import com.rrgmc.peopleface.ui.common.PersonDialog
 import com.rrgmc.peopleface.ui.common.PhotoSourceMenu
 import com.rrgmc.peopleface.ui.common.familyTitle
 import com.rrgmc.peopleface.ui.common.rememberPhotoSource
 import com.rrgmc.peopleface.ui.common.roleText
 import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FamilyDetailScreen(
     familyId: Long,
     onBack: () -> Unit,
     onOpenPerson: (Long) -> Unit,
-    onCropGroupPhoto: (Uri, Boolean) -> Unit,
+    onAddPeople: (groupId: Long) -> Unit,
+    onCropGroupPhoto: (fileName: String) -> Unit,
 ) {
     val repo = appContainer().repository
     val scope = rememberCoroutineScope()
@@ -70,10 +68,10 @@ fun FamilyDetailScreen(
     val members by repo.observePersonsInFamily(familyId).collectAsStateWithLifecycle(initialValue = emptyList())
     val kids = remember(members) { members.filter { it.person.role == Role.KID } }
 
-    var addingRole by rememberSaveable { mutableStateOf<Role?>(null) }
     var editing by rememberSaveable { mutableStateOf(false) }
     var deleting by rememberSaveable { mutableStateOf(false) }
     var photoMenu by remember { mutableStateOf(false) }
+    var overflowMenu by remember { mutableStateOf(false) }
     val photoSource = rememberPhotoSource(onCropGroupPhoto)
 
     val title = familyTitle(family?.name.orEmpty(), members.map { it.person.name })
@@ -90,49 +88,51 @@ fun FamilyDetailScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = { editing = true }) { Icon(Icons.Default.Edit, stringResource(R.string.edit)) }
-                    IconButton(onClick = { deleting = true }) { Icon(Icons.Default.Delete, stringResource(R.string.delete)) }
+                    if (members.isNotEmpty()) {
+                        PhotoSourceMenu(photoSource, photoMenu, { photoMenu = false }) {
+                            IconButton(onClick = { photoMenu = true }) {
+                                Icon(Icons.Default.AddAPhoto, stringResource(R.string.faces_from_group_photo))
+                            }
+                        }
+                    }
+                    Box {
+                        IconButton(onClick = { overflowMenu = true }) {
+                            Icon(Icons.Default.MoreVert, stringResource(R.string.more_options))
+                        }
+                        DropdownMenu(expanded = overflowMenu, onDismissRequest = { overflowMenu = false }) {
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.edit)) },
+                                leadingIcon = { Icon(Icons.Default.Edit, null) },
+                                onClick = { overflowMenu = false; editing = true },
+                            )
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.delete)) },
+                                leadingIcon = { Icon(Icons.Default.Delete, null) },
+                                onClick = { overflowMenu = false; deleting = true },
+                            )
+                        }
+                    }
                 },
             )
         },
+        floatingActionButton = {
+            ExtendedFloatingActionButton(
+                onClick = { family?.let { onAddPeople(it.groupId) } },
+                icon = { Icon(Icons.Default.PersonAdd, null) },
+                text = { Text(stringResource(R.string.add_people)) },
+            )
+        },
     ) { padding ->
-        LazyColumn(Modifier.fillMaxSize().padding(padding)) {
+        LazyColumn(
+            Modifier.fillMaxSize().padding(padding),
+            contentPadding = PaddingValues(bottom = 88.dp), // room for the floating button
+        ) {
             item {
                 val notes = family?.notes.orEmpty()
                 if (notes.isNotBlank()) {
                     Text(notes, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(16.dp))
+                    HorizontalDivider()
                 }
-                FlowRow(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
-                ) {
-                    AssistChip(
-                        onClick = { addingRole = Role.KID },
-                        label = { Text(stringResource(R.string.add_kid)) },
-                        leadingIcon = { Icon(Icons.Default.ChildCare, null) },
-                    )
-                    AssistChip(
-                        onClick = {
-                            addingRole = when {
-                                members.none { it.person.role == Role.FATHER } -> Role.FATHER
-                                members.none { it.person.role == Role.MOTHER } -> Role.MOTHER
-                                else -> Role.OTHER
-                            }
-                        },
-                        label = { Text(stringResource(R.string.add_person)) },
-                        leadingIcon = { Icon(Icons.Default.PersonAdd, null) },
-                    )
-                    if (members.isNotEmpty()) {
-                        PhotoSourceMenu(photoSource, photoMenu, { photoMenu = false }) {
-                            AssistChip(
-                                onClick = { photoMenu = true },
-                                label = { Text(stringResource(R.string.faces_from_group_photo)) },
-                                leadingIcon = { Icon(Icons.Default.AddAPhoto, null) },
-                            )
-                        }
-                    }
-                }
-                HorizontalDivider()
                 if (members.isEmpty()) {
                     Text(stringResource(R.string.family_empty), modifier = Modifier.padding(16.dp))
                 }
@@ -167,14 +167,6 @@ fun FamilyDetailScreen(
         }
     }
 
-    addingRole?.let { role ->
-        PersonDialog(
-            title = stringResource(if (role == Role.KID) R.string.add_kid else R.string.add_person),
-            initialRole = role,
-            onSave = { name, r, label, notes -> scope.launch { repo.addPerson(familyId, name, r, label, notes) } },
-            onDismiss = { addingRole = null },
-        )
-    }
     val f = family
     if (editing && f != null) {
         NameNotesDialog(

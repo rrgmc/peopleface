@@ -59,6 +59,41 @@ class RepositoryTest {
     }
 
     @Test
+    fun addPeopleSkipsBlankNames() = runTest {
+        val group = repo.addGroup("School")
+        val rows = listOf(
+            Repository.NewPerson("  ", Role.FATHER),
+            Repository.NewPerson("Rita", Role.MOTHER),
+            Repository.NewPerson("Ana", Role.KID),
+            Repository.NewPerson("", Role.KID),
+            Repository.NewPerson("Bia", Role.KID),
+            Repository.NewPerson("Tia", Role.OTHER, roleLabel = "Aunt"),
+        )
+        val family = repo.addPeople(group, 0, "", rows)!!
+        val members = repo.observePersonsInFamily(family).first()
+        assertEquals(listOf("Rita", "Ana", "Bia", "Tia"), members.map { it.person.name })
+        assertEquals("Aunt", members.last().person.roleLabel)
+
+        // Adding more to the existing family keeps the kids' order.
+        repo.addPeople(group, family, "", listOf(Repository.NewPerson("Caio", Role.KID), Repository.NewPerson("", Role.FATHER)))
+        assertEquals(
+            listOf("Rita", "Ana", "Bia", "Caio", "Tia"),
+            repo.observePersonsInFamily(family).first().map { it.person.name },
+        )
+    }
+
+    @Test
+    fun addPeopleWithNothingCreatesNoFamily() = runTest {
+        val group = repo.addGroup("School")
+        assertNull(repo.addPeople(group, 0, " ", listOf(Repository.NewPerson("", Role.KID))))
+        assertEquals(0, repo.observeGroups().first().single().familyCount)
+
+        // A named family with nobody in it yet is allowed.
+        val family = repo.addPeople(group, 0, "Silva", listOf(Repository.NewPerson("", Role.KID)))
+        assertEquals("Silva", repo.observeFamily(family!!).first()!!.name)
+    }
+
+    @Test
     fun firstPhotoBecomesThumbnailAndDeletionFallsBack() = runTest {
         val family = repo.addFamily(repo.addGroup("Club"), "")
         val person = repo.addPerson(family, "Leo", Role.KID)
