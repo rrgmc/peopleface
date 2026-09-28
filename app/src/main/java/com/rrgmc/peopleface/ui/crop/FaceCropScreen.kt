@@ -52,6 +52,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
@@ -67,6 +68,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
@@ -79,6 +81,7 @@ import com.rrgmc.peopleface.data.db.PersonRow
 import com.rrgmc.peopleface.image.ViewZoom
 import com.rrgmc.peopleface.image.Box as ImageBox
 import com.rrgmc.peopleface.ui.common.Avatar
+import com.rrgmc.peopleface.ui.common.familyLabels
 import com.rrgmc.peopleface.ui.search.matches
 import com.rrgmc.peopleface.ui.search.normalizeForSearch
 import kotlinx.coroutines.flow.flowOf
@@ -127,9 +130,10 @@ fun FaceCropScreen(
         }
     }.collectAsStateWithLifecycle(initialValue = emptyList())
     var filter by rememberSaveable { mutableStateOf("") }
+    val labels = remember(people) { if (groupId != 0L) familyLabels(people) else emptyMap() }
     val shown = remember(people, filter) {
         val q = normalizeForSearch(filter.trim())
-        if (q.isEmpty()) people else people.filter { it.matches(q) }
+        if (q.isEmpty()) people else people.filter { it.matches(q, labels[it.person.id].orEmpty()) }
     }
     val snackbar = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
@@ -153,7 +157,8 @@ fun FaceCropScreen(
     ) { padding ->
         Column(Modifier.fillMaxSize().padding(padding).imePadding()) {
             Box(
-                Modifier.weight(1f).fillMaxWidth().background(Color.Black),
+                // Clip, or the zoomed picture is drawn over the controls below.
+                Modifier.weight(1f).fillMaxWidth().clipToBounds().background(Color.Black),
                 contentAlignment = Alignment.Center,
             ) {
                 when {
@@ -175,7 +180,7 @@ fun FaceCropScreen(
                 }
             }
             Column(
-                Modifier.fillMaxWidth().padding(12.dp),
+                Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surface).padding(12.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -207,7 +212,7 @@ fun FaceCropScreen(
                     }
                 }
                 if (pickMode) {
-                    PeopleChips(shown, showFamily = groupId != 0L, selected = vm.target, saved = vm.savedFor) { vm.target = it }
+                    PeopleChips(shown, labels, selected = vm.target, saved = vm.savedFor) { vm.target = it }
                 }
                 Button(
                     enabled = vm.crop != null && vm.target != null && !vm.saving,
@@ -235,18 +240,26 @@ fun FaceCropScreen(
 @Composable
 private fun PeopleChips(
     people: List<PersonRow>,
-    showFamily: Boolean,
+    familyLabels: Map<Long, String>,
     selected: Long?,
     saved: Set<Long>,
     onSelect: (Long) -> Unit,
 ) {
     LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp), contentPadding = PaddingValues(vertical = 2.dp)) {
         items(people, key = { it.person.id }) { m ->
-            val label = if (showFamily && m.familyName.isNotBlank()) "${m.person.name} · ${m.familyName}" else m.person.name
+            val family = familyLabels[m.person.id].orEmpty()
             FilterChip(
                 selected = selected == m.person.id,
                 onClick = { onSelect(m.person.id) },
-                label = { Text(label) },
+                label = {
+                    // Second line tells apart people with the same name.
+                    Column(Modifier.padding(vertical = 4.dp)) {
+                        Text(m.person.name)
+                        if (family.isNotBlank()) {
+                            Text(family, style = MaterialTheme.typography.labelSmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        }
+                    }
+                },
                 leadingIcon = { Avatar(m.thumb, size = 24.dp) },
                 trailingIcon = if (m.person.id in saved) {
                     { Icon(Icons.Default.Check, null) }
