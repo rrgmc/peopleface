@@ -50,11 +50,11 @@ object Routes {
     fun addPeople(groupId: Long, familyId: Long = 0) = "addPeople?groupId=$groupId&familyId=$familyId"
 
     /**
-     * Crop a face for [personId], or (with [familyId]) for any member of a family from a group photo.
+     * Crop a face for [personId], or (with [familyId] / [groupId]) for anyone of that family / group.
      * [fileName] is a temporary copy of the picture in the app's cache (see rememberPhotoSource).
      */
-    fun crop(fileName: String, personId: Long = 0, familyId: Long = 0) =
-        "crop?file=${Uri.encode(fileName)}&personId=$personId&familyId=$familyId"
+    fun crop(fileName: String, personId: Long = 0, familyId: Long = 0, groupId: Long = 0) =
+        "crop?file=${Uri.encode(fileName)}&personId=$personId&familyId=$familyId&groupId=$groupId"
 }
 
 @Composable
@@ -79,6 +79,7 @@ private fun AppNavigation() {
                 onOpenPerson = { id -> nav.navigate(Routes.person(id)) },
                 onQuiz = { id -> nav.navigate(Routes.quiz(id)) },
                 onNewFamily = { groupId -> nav.navigate(Routes.addPeople(groupId)) },
+                onCropGroupPhoto = { groupId, file -> nav.navigate(Routes.crop(file, groupId = groupId)) },
             )
         }
         composable(
@@ -125,11 +126,12 @@ private fun AppNavigation() {
             )
         }
         composable(
-            "crop?file={file}&personId={personId}&familyId={familyId}",
+            "crop?file={file}&personId={personId}&familyId={familyId}&groupId={groupId}",
             listOf(
                 navArgument("file") { type = NavType.StringType },
                 navArgument("personId") { type = NavType.LongType; defaultValue = 0L },
                 navArgument("familyId") { type = NavType.LongType; defaultValue = 0L },
+                navArgument("groupId") { type = NavType.LongType; defaultValue = 0L },
             ),
         ) {
             val args = it.arguments!!
@@ -137,6 +139,7 @@ private fun AppNavigation() {
                 fileName = args.getString("file")!!,
                 personId = args.getLong("personId"),
                 familyId = args.getLong("familyId"),
+                groupId = args.getLong("groupId"),
                 onDone = back,
             )
         }
