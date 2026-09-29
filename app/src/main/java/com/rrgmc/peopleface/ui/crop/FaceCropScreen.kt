@@ -189,9 +189,9 @@ fun FaceCropScreen(
                     }
                 },
                 actions = {
-                    // "Done" is deliberate for the current picture, but ask if other pictures would be skipped.
+                    // "Close" is deliberate for the current picture, but ask if other pictures would be skipped.
                     if (pickMode) TextButton(onClick = { if (vm.hasNextPhoto) confirmLeave = true else onDone() }) {
-                        Text(stringResource(R.string.done))
+                        Text(stringResource(R.string.close))
                     }
                 },
             )
