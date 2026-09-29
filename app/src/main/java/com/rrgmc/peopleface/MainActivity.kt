@@ -218,6 +218,7 @@ private fun AppNavigation(sharedFiles: List<String>, onSharedHandled: () -> Unit
                 onBack = back,
                 onCrop = { files -> nav.navigate(Routes.crop(files, personId = personId)) },
                 onOpenFamily = { id -> nav.navigate(Routes.family(id)) },
+                onManageTags = { groupId -> nav.navigate(Routes.tags(groupId)) },
             )
         }
         composable(

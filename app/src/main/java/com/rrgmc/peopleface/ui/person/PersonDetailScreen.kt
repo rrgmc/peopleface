@@ -20,6 +20,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Label
 import androidx.compose.material.icons.filled.AddAPhoto
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
@@ -53,6 +54,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.rrgmc.peopleface.R
 import com.rrgmc.peopleface.appContainer
 import com.rrgmc.peopleface.ui.common.AsyncBlobImage
+import com.rrgmc.peopleface.ui.common.ChooseTagDialog
 import com.rrgmc.peopleface.ui.common.ConfirmDialog
 import com.rrgmc.peopleface.ui.common.PersonDialog
 import com.rrgmc.peopleface.ui.common.PhotoSourceMenu
@@ -68,6 +70,7 @@ fun PersonDetailScreen(
     onBack: () -> Unit,
     onCrop: (fileNames: List<String>) -> Unit,
     onOpenFamily: (familyId: Long) -> Unit,
+    onManageTags: (groupId: Long) -> Unit,
 ) {
     val repo = appContainer().repository
     val scope = rememberCoroutineScope()
@@ -76,11 +79,16 @@ fun PersonDetailScreen(
 
     var editing by rememberSaveable { mutableStateOf(false) }
     var deleting by rememberSaveable { mutableStateOf(false) }
+    var choosingTag by rememberSaveable { mutableStateOf(false) }
     var viewingPhoto by rememberSaveable { mutableStateOf<Long?>(null) }
     var photoMenu by remember { mutableStateOf(false) }
     val photoSource = rememberPhotoSource(onCrop)
 
     val r = row
+    val familyId = r?.person?.familyId ?: 0L
+    val family by remember(familyId) { repo.observeFamily(familyId) }.collectAsStateWithLifecycle(initialValue = null)
+    val groupId = r?.groupId ?: 0L
+    val tags by remember(groupId) { repo.observeTags(groupId) }.collectAsStateWithLifecycle(initialValue = emptyList())
     Scaffold(
         topBar = {
             TopAppBar(
@@ -120,15 +128,23 @@ fun PersonDetailScreen(
                         style = MaterialTheme.typography.bodyMedium,
                         textAlign = TextAlign.Center,
                     )
-                    if (r.tagName != null && r.tagColor != null) {
-                        TagChip(r.tagName, r.tagColor, Modifier.padding(top = 4.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        // Also the way to reach one-person families, which have no card of their own.
+                        AssistChip(
+                            onClick = { onOpenFamily(p.familyId) },
+                            label = { Text(stringResource(R.string.open_family)) },
+                            leadingIcon = { Icon(Icons.Default.FamilyRestroom, null) },
+                        )
+                        // The tag of the person's family.
+                        AssistChip(
+                            onClick = { choosingTag = true },
+                            label = {
+                                if (r.tagName != null && r.tagColor != null) TagChip(r.tagName, r.tagColor)
+                                else Text(stringResource(R.string.tag))
+                            },
+                            leadingIcon = { Icon(Icons.AutoMirrored.Filled.Label, null) },
+                        )
                     }
-                    // Also the way to reach one-person families, which have no card of their own.
-                    AssistChip(
-                        onClick = { onOpenFamily(p.familyId) },
-                        label = { Text(stringResource(R.string.open_family)) },
-                        leadingIcon = { Icon(Icons.Default.FamilyRestroom, null) },
-                    )
                     if (p.notes.isNotBlank()) {
                         Text(
                             p.notes,
@@ -220,6 +236,16 @@ fun PersonDetailScreen(
                 scope.launch { repo.updatePerson(p.copy(name = name, role = role, notes = notes)) }
             },
             onDismiss = { editing = false },
+        )
+    }
+    val f = family
+    if (choosingTag && f != null) {
+        ChooseTagDialog(
+            tags = tags,
+            selectedId = f.tagId,
+            onSelect = { tagId -> scope.launch { repo.setFamilyTag(f.id, tagId) } },
+            onManage = { onManageTags(f.groupId) },
+            onDismiss = { choosingTag = false },
         )
     }
     if (deleting && r != null) {
