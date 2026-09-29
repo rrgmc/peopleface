@@ -258,14 +258,13 @@ private fun FamilyCard(
                             modifier = Modifier.width(72.dp).clickable { onPersonClick(m.person.id) },
                         ) {
                             // The tag sits on the lower edge of the picture, mostly below it, so the face stays visible.
+                            val hasTag = showMemberTags && m.tagName != null && m.tagColor != null
                             Box(contentAlignment = Alignment.BottomCenter) {
                                 Avatar(
                                     m.thumb, m.person.role, size = 64.dp,
-                                    modifier = if (showMemberTags) Modifier.padding(bottom = TAG_BELOW_AVATAR) else Modifier,
+                                    modifier = if (hasTag) Modifier.padding(bottom = TAG_BELOW_AVATAR) else Modifier,
                                 )
-                                if (showMemberTags && m.tagName != null && m.tagColor != null) {
-                                    TagChip(m.tagName, m.tagColor, compact = true)
-                                }
+                                if (hasTag) TagChip(m.tagName!!, m.tagColor!!, compact = true)
                             }
                             Text(
                                 m.person.name,
