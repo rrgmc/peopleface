@@ -138,6 +138,10 @@
 
     <!-- Tags -->
     <string name="tags">Etiquetas</string>
+    <string name="face_size">Tamanho dos rostos</string>
+    <string name="face_size_small">Pequeno</string>
+    <string name="face_size_normal">Normal</string>
+    <string name="face_size_large">Grande</string>
     <string name="tag">Etiqueta</string>
     <string name="new_tag">Nova etiqueta</string>
     <string name="edit_tag">Editar etiqueta</string>

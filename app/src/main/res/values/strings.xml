@@ -136,6 +136,10 @@
 
     <!-- Tags -->
     <string name="tags">Tags</string>
+    <string name="face_size">Face size</string>
+    <string name="face_size_small">Small</string>
+    <string name="face_size_normal">Normal</string>
+    <string name="face_size_large">Large</string>
     <string name="tag">Tag</string>
     <string name="new_tag">New tag</string>
     <string name="edit_tag">Edit tag</string>

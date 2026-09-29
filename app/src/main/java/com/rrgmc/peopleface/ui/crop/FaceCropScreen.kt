@@ -94,6 +94,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.rrgmc.peopleface.PeopleFaceApp
 import com.rrgmc.peopleface.R
 import com.rrgmc.peopleface.data.db.PersonRow
+import com.rrgmc.peopleface.data.sortedByName
 import com.rrgmc.peopleface.image.ViewZoom
 import com.rrgmc.peopleface.image.Box as ImageBox
 import com.rrgmc.peopleface.ui.common.Avatar
@@ -141,7 +142,7 @@ fun FaceCropScreen(
     val people by remember(familyId, groupId) {
         when {
             familyId != 0L -> repo.observePersonsInFamily(familyId)
-            groupId != 0L -> repo.observePersonsInGroup(groupId).map { list -> list.sortedBy { it.person.name.lowercase() } }
+            groupId != 0L -> repo.observePersonsInGroup(groupId).map { list -> list.sortedByName { it.person.name } }
             else -> flowOf(emptyList())
         }
     }.collectAsStateWithLifecycle(initialValue = emptyList())
