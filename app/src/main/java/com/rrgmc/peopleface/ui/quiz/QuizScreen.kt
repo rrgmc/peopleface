@@ -10,9 +10,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
@@ -99,7 +97,7 @@ fun QuizScreen(groupId: Long, onBack: () -> Unit) {
 private fun QuizContent(vm: QuizViewModel) {
     val q = vm.question ?: return
     Column(
-        Modifier.widthIn(max = 480.dp).fillMaxWidth().verticalScroll(rememberScrollState()).padding(16.dp),
+        Modifier.widthIn(max = 480.dp).fillMaxSize().padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
@@ -117,12 +115,18 @@ private fun QuizContent(vm: QuizViewModel) {
                 )
             }
         }
-        q.image?.let {
-            Image(
-                it, null,
-                contentScale = ContentScale.Crop,
-                modifier = Modifier.fillMaxWidth(0.85f).aspectRatio(1f).clip(RoundedCornerShape(16.dp)),
-            )
+        // The photo takes whatever space is left, so the answer buttons stay on screen without scrolling.
+        Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
+            q.image?.let {
+                Image(
+                    it, null,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier
+                        .fillMaxWidth(0.85f)
+                        .aspectRatio(1f, matchHeightConstraintsFirst = true)
+                        .clip(RoundedCornerShape(16.dp)),
+                )
+            }
         }
 
         if (vm.revealed) {
