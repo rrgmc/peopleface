@@ -255,7 +255,8 @@ private fun FamilyCard(
                     members.forEach { m ->
                         Column(
                             horizontalAlignment = Alignment.CenterHorizontally,
-                            modifier = Modifier.width(72.dp).clickable { onPersonClick(m.person.id) },
+                            // Bottom-aligned, so names stay on one line when only some people have a tag.
+                            modifier = Modifier.align(Alignment.Bottom).width(72.dp).clickable { onPersonClick(m.person.id) },
                         ) {
                             // The tag sits on the lower edge of the picture, mostly below it, so the face stays visible.
                             val hasTag = showMemberTags && m.tagName != null && m.tagColor != null
