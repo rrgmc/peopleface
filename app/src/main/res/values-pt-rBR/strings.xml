@@ -152,4 +152,12 @@
     <string name="tags_empty">Nenhuma etiqueta ainda. Etiquetas são rótulos curtos e coloridos que você pode colocar nas famílias deste grupo.</string>
     <string name="delete_tag_title">Excluir etiqueta?</string>
     <string name="delete_tag_text">A etiqueta \"%1$s\" será removida de todas as famílias que a têm.</string>
+
+    <!-- About -->
+    <string name="about">Sobre</string>
+    <string name="about_version">Versão %1$s</string>
+    <string name="about_description">Lembre o nome das pessoas que você conhece: grupos, famílias, fotos dos rostos e um quiz.</string>
+    <string name="about_author">Por %1$s</string>
+    <string name="about_license">Código aberto, licença MIT</string>
+    <string name="about_source_code">Código-fonte</string>
 </resources>

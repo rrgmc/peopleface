@@ -18,6 +18,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.DeleteSweep
 import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Upload
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -58,7 +59,7 @@ import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsScreen(onBack: () -> Unit) {
+fun SettingsScreen(onBack: () -> Unit, onAbout: () -> Unit) {
     val context = LocalContext.current
     val backup = appContainer().backup
     val scope = rememberCoroutineScope()
@@ -152,6 +153,11 @@ fun SettingsScreen(onBack: () -> Unit) {
             ) {
                 Icon(Icons.Default.DeleteSweep, null, Modifier.padding(end = 8.dp))
                 Text(stringResource(R.string.clear_recent_photos, recentCount))
+            }
+
+            OutlinedButton(onClick = onAbout, modifier = Modifier.fillMaxWidth().padding(top = 16.dp)) {
+                Icon(Icons.Default.Info, null, Modifier.padding(end = 8.dp))
+                Text(stringResource(R.string.about))
             }
         }
     }

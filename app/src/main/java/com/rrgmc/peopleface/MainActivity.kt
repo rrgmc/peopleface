@@ -23,6 +23,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.rrgmc.peopleface.data.AppContainer
+import com.rrgmc.peopleface.ui.about.AboutScreen
 import com.rrgmc.peopleface.ui.addpeople.AddPeopleScreen
 import com.rrgmc.peopleface.ui.common.ChooseGroupDialog
 import com.rrgmc.peopleface.ui.common.MAX_PICKED_PHOTOS
@@ -108,6 +109,7 @@ object Routes {
     const val GROUPS = "groups"
     const val SEARCH = "search"
     const val SETTINGS = "settings"
+    const val ABOUT = "about"
     fun group(id: Long) = "group/$id"
     fun family(id: Long) = "family/$id"
     fun person(id: Long) = "person/$id"
@@ -249,7 +251,10 @@ private fun AppNavigation(sharedFiles: List<String>, onSharedHandled: () -> Unit
             QuizScreen(groupId = it.arguments!!.getLong("groupId"), onBack = back)
         }
         composable(Routes.SETTINGS) {
-            SettingsScreen(onBack = back)
+            SettingsScreen(onBack = back, onAbout = { nav.navigate(Routes.ABOUT) })
+        }
+        composable(Routes.ABOUT) {
+            AboutScreen(onBack = back)
         }
     }
 }
