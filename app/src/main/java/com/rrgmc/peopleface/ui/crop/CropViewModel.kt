@@ -119,8 +119,9 @@ class CropViewModel(
                 imageWidth = bmp.width
                 imageHeight = bmp.height
                 image = bmp.asImageBitmap()
+                // Left to right, so stepping through them with previous/next is predictable.
                 faces = try {
-                    app.container.faceDetector.detect(bmp)
+                    app.container.faceDetector.detect(bmp).sortedBy { it.centerX }
                 } catch (e: Exception) {
                     emptyList()
                 }
@@ -143,6 +144,13 @@ class CropViewModel(
     fun selectFace(index: Int) {
         selectedFace = index
         crop = CropMath.faceToCrop(faces[index], imageWidth, imageHeight)
+    }
+
+    /** Selects the previous ([step] = -1) or next ([step] = 1) face, wrapping around. */
+    fun stepFace(step: Int) {
+        if (faces.isEmpty()) return
+        val current = selectedFace ?: if (step > 0) -1 else faces.size
+        selectFace(Math.floorMod(current + step, faces.size))
     }
 
     fun onTap(x: Float, y: Float) {

@@ -514,6 +514,28 @@ private fun CropCanvas(vm: CropViewModel) {
                 modifier = Modifier.align(Alignment.TopEnd).padding(8.dp),
             ) { Icon(Icons.Default.ZoomOutMap, stringResource(R.string.reset_zoom)) }
         }
+        if (vm.faces.size > 1) {
+            Row(
+                Modifier.align(Alignment.BottomCenter).padding(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                FilledTonalIconButton(onClick = { vm.stepFace(-1) }) {
+                    Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, stringResource(R.string.previous_face))
+                }
+                Text(
+                    vm.selectedFace?.let { "${it + 1}/${vm.faces.size}" } ?: "–/${vm.faces.size}",
+                    color = Color.White,
+                    style = MaterialTheme.typography.labelLarge,
+                    modifier = Modifier
+                        .background(Color.Black.copy(alpha = 0.5f), RoundedCornerShape(12.dp))
+                        .padding(horizontal = 10.dp, vertical = 4.dp),
+                )
+                FilledTonalIconButton(onClick = { vm.stepFace(1) }) {
+                    Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, stringResource(R.string.next_face))
+                }
+            }
+        }
     }
 }
 
