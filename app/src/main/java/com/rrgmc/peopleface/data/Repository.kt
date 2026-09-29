@@ -10,6 +10,7 @@ import com.rrgmc.peopleface.data.db.PhotoEntity
 import com.rrgmc.peopleface.data.db.Role
 import com.rrgmc.peopleface.data.db.TagEntity
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 
 class Repository(private val db: AppDatabase) {
     private val groups = db.groupDao()
@@ -19,7 +20,7 @@ class Repository(private val db: AppDatabase) {
     private val tags = db.tagDao()
 
     // Groups
-    fun observeGroups() = groups.observeAll()
+    fun observeGroups() = groups.observeAll().map { list -> list.sortedByName { it.group.name } }
     fun observeGroup(id: Long) = groups.observe(id)
     suspend fun addGroup(name: String, notes: String = "") =
         groups.insert(GroupEntity(name = name.trim(), notes = notes.trim()))
@@ -27,7 +28,7 @@ class Repository(private val db: AppDatabase) {
     suspend fun deleteGroup(group: GroupEntity) = groups.delete(group)
 
     // Families
-    fun observeFamilies(groupId: Long) = families.observeByGroup(groupId)
+    fun observeFamilies(groupId: Long) = families.observeByGroup(groupId).map { list -> list.sortedByName { it.name } }
     fun observeFamily(id: Long) = families.observe(id)
     suspend fun addFamily(groupId: Long, name: String, notes: String = "") =
         families.insert(FamilyEntity(groupId = groupId, name = name.trim(), notes = notes.trim()))
@@ -36,7 +37,7 @@ class Repository(private val db: AppDatabase) {
     suspend fun setFamilyTag(familyId: Long, tagId: Long?) = families.setTag(familyId, tagId)
 
     // Tags
-    fun observeTags(groupId: Long) = tags.observeByGroup(groupId)
+    fun observeTags(groupId: Long) = tags.observeByGroup(groupId).map { list -> list.sortedByName { it.name } }
     suspend fun addTag(groupId: Long, name: String, color: Int) =
         tags.insert(TagEntity(groupId = groupId, name = name.trim(), color = color))
     suspend fun updateTag(tag: TagEntity) = tags.update(tag.copy(name = tag.name.trim()))
@@ -47,7 +48,7 @@ class Repository(private val db: AppDatabase) {
     fun observePersonsInGroup(groupId: Long) = persons.observeRowsByGroup(groupId)
     fun observePersonsInFamily(familyId: Long) = persons.observeRowsByFamily(familyId)
     fun observePerson(id: Long): Flow<PersonRow?> = persons.observeRow(id)
-    fun observeAllPersons() = persons.observeAllRows()
+    fun observeAllPersons() = persons.observeAllRows().map { list -> list.sortedByName { it.person.name } }
     suspend fun personsWithPhotos(groupId: Long) = persons.rowsWithPhotos(groupId)
 
     suspend fun addPerson(familyId: Long, name: String, role: Role, notes: String = ""): Long =

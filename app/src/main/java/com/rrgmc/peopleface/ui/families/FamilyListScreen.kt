@@ -53,6 +53,7 @@ import com.rrgmc.peopleface.R
 import com.rrgmc.peopleface.appContainer
 import com.rrgmc.peopleface.data.db.PersonRow
 import com.rrgmc.peopleface.data.db.TagEntity
+import com.rrgmc.peopleface.data.sortedByName
 import com.rrgmc.peopleface.ui.common.Avatar
 import com.rrgmc.peopleface.ui.common.ConfirmDialog
 import com.rrgmc.peopleface.ui.common.NameNotesDialog
@@ -172,7 +173,7 @@ fun FamilyListScreen(
                     FamilyCard(
                         title = stringResource(R.string.individuals),
                         members = singleFamilies.flatMap { membersByFamily[it.id].orEmpty() }
-                            .sortedBy { it.person.name.lowercase() },
+                            .sortedByName { it.person.name },
                         onClick = null,
                         onPersonClick = onOpenPerson,
                         onAdd = { onAddIndividuals(groupId) },
