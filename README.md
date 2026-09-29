@@ -14,6 +14,7 @@ Android app to remember people's names.
 - **Quiz**: multiple choice or flashcards, per group or across all groups.
 - **Backup**: everything, including photos, lives in one SQLite file (`peopleface.db`).
   Settings → Export / Import database.
+- **About**: Settings → About shows the app version, author and a link to the source code.
 
 Only the cropped faces are stored (512 px JPEG + 192 px thumbnail); original pictures are not kept.
 
