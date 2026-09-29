@@ -8,7 +8,7 @@
     <string name="delete">Delete</string>
     <string name="save">Save</string>
     <string name="cancel">Cancel</string>
-    <string name="done">Done</string>
+    <string name="close">Close</string>
     <string name="next">Next</string>
     <string name="name">Name</string>
     <string name="notes">Notes</string>
@@ -88,6 +88,8 @@
     <string name="crop_hint">Tap a face, drag the square or a corner, pinch to zoom.</string>
     <string name="search_person_hint">Search name…</string>
     <string name="reset_zoom">Reset zoom</string>
+    <string name="previous_face">Previous face</string>
+    <string name="next_face">Next face</string>
     <string name="leave_photo_title">Leave this photo?</string>
     <string name="leave_photo_some_saved">The faces you already saved are kept; the others from this photo will be lost.</string>
     <string name="leave_photo_nothing_saved">Nothing from this photo was saved yet.</string>

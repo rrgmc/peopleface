@@ -3,27 +3,37 @@ package com.rrgmc.peopleface.ui.crop
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.animateScrollBy
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.calculateCentroid
 import androidx.compose.foundation.gestures.calculatePan
 import androidx.compose.foundation.gestures.calculateZoom
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.ZoomOutMap
@@ -59,6 +69,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.graphics.ImageBitmap
@@ -69,6 +80,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
@@ -113,7 +125,7 @@ private const val GESTURE_ZOOM = 4
  * With [familyId] or [groupId] ("faces from a photo") each face can be assigned in turn to someone of that
  * family or group.
  */
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun FaceCropScreen(
     fileNames: List<String>,
@@ -140,6 +152,7 @@ fun FaceCropScreen(
         if (q.isEmpty()) people else people.filter { it.matches(q, labels[it.person.id].orEmpty()) }
     }
     val snackbar = remember { SnackbarHostState() }
+    val focusManager = LocalFocusManager.current
 
     // Leaving drops the picture(s): ask first while there is still something to save.
     val photoUnfinished = vm.image != null && (!pickMode || vm.faces.isEmpty() || vm.doneFaces.size < vm.faces.size)
@@ -189,16 +202,17 @@ fun FaceCropScreen(
                     }
                 },
                 actions = {
-                    // "Done" is deliberate for the current picture, but ask if other pictures would be skipped.
+                    // "Close" is deliberate for the current picture, but ask if other pictures would be skipped.
                     if (pickMode) TextButton(onClick = { if (vm.hasNextPhoto) confirmLeave = true else onDone() }) {
-                        Text(stringResource(R.string.done))
+                        Text(stringResource(R.string.close))
                     }
                 },
             )
         },
         snackbarHost = { SnackbarHost(snackbar) },
     ) { padding ->
-        Column(Modifier.fillMaxSize().padding(padding).imePadding()) {
+        // consumeWindowInsets: the navigation bar is already in [padding], don't add it again under the keyboard.
+        Column(Modifier.fillMaxSize().padding(padding).consumeWindowInsets(padding).imePadding()) {
             Box(
                 // Clip, or the zoomed picture is drawn over the controls below.
                 Modifier.weight(1f).fillMaxWidth().clipToBounds().background(Color.Black),
@@ -255,7 +269,11 @@ fun FaceCropScreen(
                     }
                 }
                 if (pickMode) {
-                    PeopleChips(shown, labels, selected = vm.target, saved = vm.savedFor) { vm.target = it }
+                    PeopleChips(shown, labels, selected = vm.target, saved = vm.savedFor) {
+                        vm.target = it
+                        // Picking the person ends the search: close the keyboard so the save button shows.
+                        focusManager.clearFocus()
+                    }
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     if (vm.hasNextPhoto) {
@@ -290,6 +308,10 @@ fun FaceCropScreen(
     }
 }
 
+/**
+ * The people to pick from, in one scrollable row. When more people are off to a side, that side fades
+ * out and shows an arrow (tap it to scroll), so it is clear the row scrolls.
+ */
 @Composable
 private fun PeopleChips(
     people: List<PersonRow>,
@@ -298,27 +320,60 @@ private fun PeopleChips(
     saved: Set<Long>,
     onSelect: (Long) -> Unit,
 ) {
-    LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp), contentPadding = PaddingValues(vertical = 2.dp)) {
-        items(people, key = { it.person.id }) { m ->
-            val family = familyLabels[m.person.id].orEmpty()
-            FilterChip(
-                selected = selected == m.person.id,
-                onClick = { onSelect(m.person.id) },
-                label = {
-                    // Second line tells apart people with the same name.
-                    Column(Modifier.padding(vertical = 4.dp)) {
-                        Text(m.person.name)
-                        if (family.isNotBlank()) {
-                            Text(family, style = MaterialTheme.typography.labelSmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
+    val state = rememberLazyListState()
+    val scope = rememberCoroutineScope()
+    val scrollPage = { direction: Int ->
+        scope.launch { state.animateScrollBy(direction * state.layoutInfo.viewportSize.width * 0.8f) }
+    }
+    Box {
+        LazyRow(state = state, horizontalArrangement = Arrangement.spacedBy(8.dp), contentPadding = PaddingValues(vertical = 2.dp)) {
+            items(people, key = { it.person.id }) { m ->
+                val family = familyLabels[m.person.id].orEmpty()
+                FilterChip(
+                    selected = selected == m.person.id,
+                    onClick = { onSelect(m.person.id) },
+                    label = {
+                        // Second line tells apart people with the same name.
+                        Column(Modifier.padding(vertical = 4.dp)) {
+                            Text(m.person.name)
+                            if (family.isNotBlank()) {
+                                Text(family, style = MaterialTheme.typography.labelSmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            }
                         }
-                    }
-                },
-                leadingIcon = { Avatar(m.thumb, m.person.role, size = 24.dp) },
-                trailingIcon = if (m.person.id in saved) {
-                    { Icon(Icons.Default.Check, null) }
-                } else null,
-            )
+                    },
+                    leadingIcon = { Avatar(m.thumb, m.person.role, size = 24.dp) },
+                    trailingIcon = if (m.person.id in saved) {
+                        { Icon(Icons.Default.Check, null) }
+                    } else null,
+                )
+            }
         }
+        Box(Modifier.matchParentSize()) {
+            if (state.canScrollBackward) ScrollHint(Alignment.CenterStart, forward = false) { scrollPage(-1) }
+            if (state.canScrollForward) ScrollHint(Alignment.CenterEnd, forward = true) { scrollPage(1) }
+        }
+    }
+}
+
+/** Fade and arrow over one edge of [PeopleChips]. */
+@Composable
+private fun BoxScope.ScrollHint(alignment: Alignment, forward: Boolean, onClick: () -> Unit) {
+    val surface = MaterialTheme.colorScheme.surface
+    val fade = listOf(surface.copy(alpha = 0f), surface.copy(alpha = 0.9f), surface)
+    Box(
+        Modifier
+            .align(alignment)
+            .fillMaxHeight()
+            .width(40.dp)
+            .background(Brush.horizontalGradient(if (forward) fade else fade.reversed()))
+            .clickable(onClick = onClick),
+        contentAlignment = if (forward) Alignment.CenterEnd else Alignment.CenterStart,
+    ) {
+        Icon(
+            if (forward) Icons.AutoMirrored.Filled.KeyboardArrowRight else Icons.AutoMirrored.Filled.KeyboardArrowLeft,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
     }
 }
 
@@ -359,10 +414,12 @@ private fun CropCanvas(vm: CropViewModel) {
     val faceColor = Color(0xFFFFD54F)
     val doneColor = Color(0xFF66BB6A)
 
-    // When zoomed in and the selection jumps to another face, bring it into view.
+    // When zoomed in and the selection jumps to a face out of view, bring it into view (otherwise keep the view).
     LaunchedEffect(vm.selectedFace) {
         val c = vm.crop ?: return@LaunchedEffect
         if (!zoom.isZoomed) return@LaunchedEffect
+        val r = currentFit.toScreen(c)
+        if (r.left >= 0 && r.top >= 0 && r.right <= viewSize.width && r.bottom <= viewSize.height) return@LaunchedEffect
         val cx = base.offsetX + c.centerX * base.scale
         val cy = base.offsetY + c.centerY * base.scale
         zoom = zoom.copy(panX = viewSize.width / 2f - zoom.zoom * cx, panY = viewSize.height / 2f - zoom.zoom * cy)
@@ -456,6 +513,28 @@ private fun CropCanvas(vm: CropViewModel) {
                 onClick = { zoom = ViewZoom() },
                 modifier = Modifier.align(Alignment.TopEnd).padding(8.dp),
             ) { Icon(Icons.Default.ZoomOutMap, stringResource(R.string.reset_zoom)) }
+        }
+        if (vm.faces.size > 1) {
+            Row(
+                Modifier.align(Alignment.BottomCenter).padding(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                FilledTonalIconButton(onClick = { vm.stepFace(-1) }) {
+                    Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, stringResource(R.string.previous_face))
+                }
+                Text(
+                    vm.selectedFace?.let { "${it + 1}/${vm.faces.size}" } ?: "–/${vm.faces.size}",
+                    color = Color.White,
+                    style = MaterialTheme.typography.labelLarge,
+                    modifier = Modifier
+                        .background(Color.Black.copy(alpha = 0.5f), RoundedCornerShape(12.dp))
+                        .padding(horizontal = 10.dp, vertical = 4.dp),
+                )
+                FilledTonalIconButton(onClick = { vm.stepFace(1) }) {
+                    Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, stringResource(R.string.next_face))
+                }
+            }
         }
     }
 }
