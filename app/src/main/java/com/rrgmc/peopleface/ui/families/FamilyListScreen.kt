@@ -215,6 +215,9 @@ fun FamilyListScreen(
     }
 }
 
+/** How far below a picture its tag reaches in the individuals card. */
+private val TAG_BELOW_AVATAR = 10.dp
+
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun FamilyCard(
@@ -254,10 +257,14 @@ private fun FamilyCard(
                             horizontalAlignment = Alignment.CenterHorizontally,
                             modifier = Modifier.width(72.dp).clickable { onPersonClick(m.person.id) },
                         ) {
+                            // The tag sits on the lower edge of the picture, mostly below it, so the face stays visible.
                             Box(contentAlignment = Alignment.BottomCenter) {
-                                Avatar(m.thumb, m.person.role, size = 64.dp)
+                                Avatar(
+                                    m.thumb, m.person.role, size = 64.dp,
+                                    modifier = if (showMemberTags) Modifier.padding(bottom = TAG_BELOW_AVATAR) else Modifier,
+                                )
                                 if (showMemberTags && m.tagName != null && m.tagColor != null) {
-                                    TagChip(m.tagName, m.tagColor)
+                                    TagChip(m.tagName, m.tagColor, compact = true)
                                 }
                             }
                             Text(

@@ -41,6 +41,7 @@ import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.text.style.LineHeightStyle
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.rrgmc.peopleface.R
@@ -56,21 +57,40 @@ val TAG_COLORS: List<Int> = listOf(
     0xFF757575, 0xFF212121,
 ).map { it.toInt() }
 
-/** A small colored label with the tag name; the text is black or white, whichever reads better. */
+/**
+ * A small colored label with the tag name; the text is black or white, whichever reads better.
+ * [compact] is for a badge over a picture: same text size, but no extra height and a border in [borderColor].
+ */
 @Composable
-fun TagChip(name: String, color: Int, modifier: Modifier = Modifier) {
+fun TagChip(
+    name: String,
+    color: Int,
+    modifier: Modifier = Modifier,
+    compact: Boolean = false,
+    borderColor: Color = MaterialTheme.colorScheme.surfaceContainerHighest, // a Card's background
+) {
     val background = Color(color)
+    val shape = RoundedCornerShape(4.dp)
+    val style = MaterialTheme.typography.labelSmall.let {
+        if (compact) {
+            it.copy(
+                lineHeight = it.fontSize,
+                lineHeightStyle = LineHeightStyle(LineHeightStyle.Alignment.Center, LineHeightStyle.Trim.Both),
+            )
+        } else it
+    }
     Text(
         name,
         color = if (background.luminance() > 0.5f) Color.Black else Color.White,
-        style = MaterialTheme.typography.labelSmall,
+        style = style,
         fontWeight = FontWeight.Bold,
         maxLines = 1,
         overflow = TextOverflow.Ellipsis,
         modifier = modifier
             .widthIn(max = 120.dp)
-            .background(background, RoundedCornerShape(4.dp))
-            .padding(horizontal = 6.dp, vertical = 2.dp),
+            .then(if (compact) Modifier.border(1.5.dp, borderColor, shape) else Modifier)
+            .background(background, shape)
+            .padding(horizontal = if (compact) 4.dp else 6.dp, vertical = if (compact) 1.5.dp else 2.dp),
     )
 }
 
