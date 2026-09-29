@@ -11,8 +11,10 @@ import androidx.compose.foundation.gestures.calculateZoom
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
@@ -69,6 +71,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
@@ -113,7 +116,7 @@ private const val GESTURE_ZOOM = 4
  * With [familyId] or [groupId] ("faces from a photo") each face can be assigned in turn to someone of that
  * family or group.
  */
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun FaceCropScreen(
     fileNames: List<String>,
@@ -140,6 +143,7 @@ fun FaceCropScreen(
         if (q.isEmpty()) people else people.filter { it.matches(q, labels[it.person.id].orEmpty()) }
     }
     val snackbar = remember { SnackbarHostState() }
+    val focusManager = LocalFocusManager.current
 
     // Leaving drops the picture(s): ask first while there is still something to save.
     val photoUnfinished = vm.image != null && (!pickMode || vm.faces.isEmpty() || vm.doneFaces.size < vm.faces.size)
@@ -198,7 +202,8 @@ fun FaceCropScreen(
         },
         snackbarHost = { SnackbarHost(snackbar) },
     ) { padding ->
-        Column(Modifier.fillMaxSize().padding(padding).imePadding()) {
+        // consumeWindowInsets: the navigation bar is already in [padding], don't add it again under the keyboard.
+        Column(Modifier.fillMaxSize().padding(padding).consumeWindowInsets(padding).imePadding()) {
             Box(
                 // Clip, or the zoomed picture is drawn over the controls below.
                 Modifier.weight(1f).fillMaxWidth().clipToBounds().background(Color.Black),
@@ -255,7 +260,11 @@ fun FaceCropScreen(
                     }
                 }
                 if (pickMode) {
-                    PeopleChips(shown, labels, selected = vm.target, saved = vm.savedFor) { vm.target = it }
+                    PeopleChips(shown, labels, selected = vm.target, saved = vm.savedFor) {
+                        vm.target = it
+                        // Picking the person ends the search: close the keyboard so the save button shows.
+                        focusManager.clearFocus()
+                    }
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     if (vm.hasNextPhoto) {
