@@ -8,8 +8,10 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
@@ -19,6 +21,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Label
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AddAPhoto
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.MoreVert
@@ -29,6 +32,7 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -44,6 +48,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -88,6 +93,8 @@ fun FamilyListScreen(
     var menu by remember { mutableStateOf(false) }
     var photoMenu by remember { mutableStateOf(false) }
     val photoSource = rememberPhotoSource { onCropGroupPhoto(groupId, it) }
+    val context = LocalContext.current
+    var faceSize by remember { mutableStateOf(loadFaceSize(context)) }
     var editing by rememberSaveable { mutableStateOf(false) }
     var deleting by rememberSaveable { mutableStateOf(false) }
 
@@ -132,6 +139,21 @@ fun FamilyListScreen(
                                 leadingIcon = { Icon(Icons.Default.Delete, null) },
                                 onClick = { menu = false; deleting = true },
                             )
+                            HorizontalDivider()
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.face_size), style = MaterialTheme.typography.labelMedium) },
+                                enabled = false,
+                                onClick = {},
+                            )
+                            FaceSize.entries.forEach { size ->
+                                DropdownMenuItem(
+                                    text = { Text(stringResource(size.label)) },
+                                    leadingIcon = {
+                                        if (size == faceSize) Icon(Icons.Default.Check, null) else Spacer(Modifier.size(24.dp))
+                                    },
+                                    onClick = { menu = false; faceSize = size; saveFaceSize(context, size) },
+                                )
+                            }
                         }
                     }
                 },
@@ -178,6 +200,7 @@ fun FamilyListScreen(
                         onPersonClick = onOpenPerson,
                         onAdd = { onAddIndividuals(groupId) },
                         showMemberTags = true,
+                        faceSize = faceSize,
                     )
                 }
             }
@@ -189,6 +212,7 @@ fun FamilyListScreen(
                     tag = family.tagId?.let { tagsById[it] },
                     onClick = { onOpenFamily(family.id) },
                     onPersonClick = onOpenPerson,
+                    faceSize = faceSize,
                 )
             }
         }
@@ -230,6 +254,7 @@ private fun FamilyCard(
     onAdd: (() -> Unit)? = null,
     /** For the individuals card: each person's (one-person family's) tag is shown on their picture. */
     showMemberTags: Boolean = false,
+    faceSize: FaceSize = FaceSize.NORMAL,
 ) {
     val content: @Composable () -> Unit = {
         Column(Modifier.padding(12.dp)) {
@@ -257,13 +282,13 @@ private fun FamilyCard(
                         Column(
                             horizontalAlignment = Alignment.CenterHorizontally,
                             // Bottom-aligned, so names stay on one line when only some people have a tag.
-                            modifier = Modifier.align(Alignment.Bottom).width(72.dp).clickable { onPersonClick(m.person.id) },
+                            modifier = Modifier.align(Alignment.Bottom).width(faceSize.width).clickable { onPersonClick(m.person.id) },
                         ) {
                             // The tag sits on the lower edge of the picture, mostly below it, so the face stays visible.
                             val hasTag = showMemberTags && m.tagName != null && m.tagColor != null
                             Box(contentAlignment = Alignment.BottomCenter) {
                                 Avatar(
-                                    m.thumb, m.person.role, size = 64.dp,
+                                    m.thumb, m.person.role, size = faceSize.avatar,
                                     modifier = if (hasTag) Modifier.padding(bottom = TAG_BELOW_AVATAR) else Modifier,
                                 )
                                 if (hasTag) TagChip(m.tagName!!, m.tagColor!!, compact = true)
