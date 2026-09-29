@@ -359,10 +359,12 @@ private fun CropCanvas(vm: CropViewModel) {
     val faceColor = Color(0xFFFFD54F)
     val doneColor = Color(0xFF66BB6A)
 
-    // When zoomed in and the selection jumps to another face, bring it into view.
+    // When zoomed in and the selection jumps to a face out of view, bring it into view (otherwise keep the view).
     LaunchedEffect(vm.selectedFace) {
         val c = vm.crop ?: return@LaunchedEffect
         if (!zoom.isZoomed) return@LaunchedEffect
+        val r = currentFit.toScreen(c)
+        if (r.left >= 0 && r.top >= 0 && r.right <= viewSize.width && r.bottom <= viewSize.height) return@LaunchedEffect
         val cx = base.offsetX + c.centerX * base.scale
         val cy = base.offsetY + c.centerY * base.scale
         zoom = zoom.copy(panX = viewSize.width / 2f - zoom.zoom * cx, panY = viewSize.height / 2f - zoom.zoom * cy)

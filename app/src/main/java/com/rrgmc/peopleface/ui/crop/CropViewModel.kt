@@ -178,10 +178,19 @@ class CropViewModel(
         }
     }
 
-    /** Group-photo mode: after saving, go to the next face nobody got yet. */
+    /**
+     * Group-photo mode: after saving, go to the face nobody got yet that is closest to the one just
+     * saved, so the view stays where the user was working instead of jumping back to the first face.
+     */
     fun advance() {
         target = null
-        val next = faces.indices.firstOrNull { it !in doneFaces }
+        val here = crop
+        val next = faces.indices.filter { it !in doneFaces }.minByOrNull { i ->
+            if (here == null) return@minByOrNull i.toFloat()
+            val dx = faces[i].centerX - here.centerX
+            val dy = faces[i].centerY - here.centerY
+            dx * dx + dy * dy
+        }
         if (next != null) {
             selectFace(next)
         } else if (faces.isNotEmpty()) {
