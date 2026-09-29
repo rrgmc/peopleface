@@ -150,4 +150,12 @@
     <string name="tags_empty">No tags yet. Tags are short colored labels you can put on the families of this group.</string>
     <string name="delete_tag_title">Delete tag?</string>
     <string name="delete_tag_text">The tag \"%1$s\" will be removed from all families that have it.</string>
+
+    <!-- About -->
+    <string name="about">About</string>
+    <string name="about_version">Version %1$s</string>
+    <string name="about_description">Remember the names of the people you meet: groups, families, face photos and a quiz.</string>
+    <string name="about_author">By %1$s</string>
+    <string name="about_license">Open source, MIT license</string>
+    <string name="about_source_code">Source code</string>
 </resources>
