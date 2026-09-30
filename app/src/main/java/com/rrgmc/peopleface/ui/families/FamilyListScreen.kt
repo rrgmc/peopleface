@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Label
@@ -50,6 +51,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
@@ -109,7 +111,17 @@ fun FamilyListScreen(
             TopAppBar(
                 title = {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        group?.icon?.let { GroupIcon(it, Modifier.padding(end = 12.dp), size = 36.dp) }
+                        // Tapping the icon (or the groups symbol while there is none) picks a new one.
+                        if (group != null) {
+                            PhotoSourceMenu(iconSource, iconMenu, { iconMenu = false }) {
+                                GroupIcon(
+                                    group?.icon,
+                                    Modifier.clip(RoundedCornerShape(8.dp)).clickable { iconMenu = true },
+                                    size = 36.dp,
+                                )
+                            }
+                            Spacer(Modifier.width(12.dp))
+                        }
                         Text(group?.name.orEmpty(), maxLines = 1, overflow = TextOverflow.Ellipsis)
                     }
                 },
@@ -126,61 +138,63 @@ fun FamilyListScreen(
                             }
                         }
                     }
-                    IconButton(onClick = { onQuiz(groupId) }) { Icon(Icons.Default.Quiz, stringResource(R.string.quiz)) }
-                    // The icon's picture sources open from the same place as the menu that offers them.
-                    PhotoSourceMenu(iconSource, iconMenu, { iconMenu = false }) {
-                        Box {
-                            IconButton(onClick = { menu = true }) { Icon(Icons.Default.MoreVert, null) }
-                            DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
+                    // Everything else is in the menu, leaving room for the group name.
+                    Box {
+                        IconButton(onClick = { menu = true }) { Icon(Icons.Default.MoreVert, null) }
+                        DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.quiz)) },
+                                leadingIcon = { Icon(Icons.Default.Quiz, null) },
+                                onClick = { menu = false; onQuiz(groupId) },
+                            )
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.add_individuals)) },
+                                leadingIcon = { Icon(Icons.Default.PersonAdd, null) },
+                                onClick = { menu = false; onAddIndividuals(groupId) },
+                            )
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.tags)) },
+                                leadingIcon = { Icon(Icons.AutoMirrored.Filled.Label, null) },
+                                onClick = { menu = false; onManageTags(groupId) },
+                            )
+                            DropdownMenuItem(
+                                text = {
+                                    Text(stringResource(if (group?.icon == null) R.string.set_group_icon else R.string.change_group_icon))
+                                },
+                                leadingIcon = { Icon(Icons.Default.Image, null) },
+                                onClick = { menu = false; iconMenu = true },
+                            )
+                            if (group?.icon != null) {
                                 DropdownMenuItem(
-                                    text = { Text(stringResource(R.string.add_individuals)) },
-                                    leadingIcon = { Icon(Icons.Default.PersonAdd, null) },
-                                    onClick = { menu = false; onAddIndividuals(groupId) },
+                                    text = { Text(stringResource(R.string.remove_group_icon)) },
+                                    leadingIcon = { Icon(Icons.Default.HideImage, null) },
+                                    onClick = { menu = false; scope.launch { repo.setGroupIcon(groupId, null) } },
                                 )
+                            }
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.edit)) },
+                                leadingIcon = { Icon(Icons.Default.Edit, null) },
+                                onClick = { menu = false; editing = true },
+                            )
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.delete)) },
+                                leadingIcon = { Icon(Icons.Default.Delete, null) },
+                                onClick = { menu = false; deleting = true },
+                            )
+                            HorizontalDivider()
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.face_size), style = MaterialTheme.typography.labelMedium) },
+                                enabled = false,
+                                onClick = {},
+                            )
+                            FaceSize.entries.forEach { size ->
                                 DropdownMenuItem(
-                                    text = { Text(stringResource(R.string.tags)) },
-                                    leadingIcon = { Icon(Icons.AutoMirrored.Filled.Label, null) },
-                                    onClick = { menu = false; onManageTags(groupId) },
-                                )
-                                DropdownMenuItem(
-                                    text = {
-                                        Text(stringResource(if (group?.icon == null) R.string.set_group_icon else R.string.change_group_icon))
+                                    text = { Text(stringResource(size.label)) },
+                                    leadingIcon = {
+                                        if (size == faceSize) Icon(Icons.Default.Check, null) else Spacer(Modifier.size(24.dp))
                                     },
-                                    leadingIcon = { Icon(Icons.Default.Image, null) },
-                                    onClick = { menu = false; iconMenu = true },
+                                    onClick = { menu = false; faceSize = size; saveFaceSize(context, size) },
                                 )
-                                if (group?.icon != null) {
-                                    DropdownMenuItem(
-                                        text = { Text(stringResource(R.string.remove_group_icon)) },
-                                        leadingIcon = { Icon(Icons.Default.HideImage, null) },
-                                        onClick = { menu = false; scope.launch { repo.setGroupIcon(groupId, null) } },
-                                    )
-                                }
-                                DropdownMenuItem(
-                                    text = { Text(stringResource(R.string.edit)) },
-                                    leadingIcon = { Icon(Icons.Default.Edit, null) },
-                                    onClick = { menu = false; editing = true },
-                                )
-                                DropdownMenuItem(
-                                    text = { Text(stringResource(R.string.delete)) },
-                                    leadingIcon = { Icon(Icons.Default.Delete, null) },
-                                    onClick = { menu = false; deleting = true },
-                                )
-                                HorizontalDivider()
-                                DropdownMenuItem(
-                                    text = { Text(stringResource(R.string.face_size), style = MaterialTheme.typography.labelMedium) },
-                                    enabled = false,
-                                    onClick = {},
-                                )
-                                FaceSize.entries.forEach { size ->
-                                    DropdownMenuItem(
-                                        text = { Text(stringResource(size.label)) },
-                                        leadingIcon = {
-                                            if (size == faceSize) Icon(Icons.Default.Check, null) else Spacer(Modifier.size(24.dp))
-                                        },
-                                        onClick = { menu = false; faceSize = size; saveFaceSize(context, size) },
-                                    )
-                                }
                             }
                         }
                     }
