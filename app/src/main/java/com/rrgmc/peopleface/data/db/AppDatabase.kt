@@ -9,7 +9,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 
 @Database(
     entities = [GroupEntity::class, FamilyEntity::class, PersonEntity::class, PhotoEntity::class, TagEntity::class],
-    version = 3,
+    version = 4,
     exportSchema = true,
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -61,11 +61,18 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        /** Groups: an optional icon picture. */
+        val MIGRATION_3_4 = object : Migration(3, 4) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE `origin_groups` ADD COLUMN `icon` BLOB DEFAULT NULL")
+            }
+        }
+
         fun create(context: Context): AppDatabase =
             Room.databaseBuilder(context, AppDatabase::class.java, FILE_NAME)
                 // No -wal/-shm side files: the .db file alone is always a complete backup.
                 .setJournalMode(JournalMode.TRUNCATE)
-                .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
                 .build()
     }
 }

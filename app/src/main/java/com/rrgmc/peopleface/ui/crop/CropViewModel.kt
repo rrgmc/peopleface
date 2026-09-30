@@ -29,11 +29,14 @@ import java.io.File
  * database. Every picture is first turned into one of the [RecentPhotos] (an upright, downscaled copy
  * outside the database), in the background and in order, so pictures that were not reached can still be
  * reopened later; the temporary copies they were loaded from are deleted.
+ *
+ * With [iconGroupId] the square becomes that group's icon instead: no faces are detected.
  */
 class CropViewModel(
     private val app: PeopleFaceApp,
     fileNames: List<String>,
     private val personId: Long,
+    private val iconGroupId: Long = 0,
 ) : ViewModel() {
     private val repo = app.container.repository
     private val sources: List<File> = fileNames.map { pickedFile(app, it) }
@@ -43,6 +46,7 @@ class CropViewModel(
     private var bitmap: Bitmap? = null
     private var loadJob: Job? = null
 
+    val iconMode = iconGroupId != 0L
     val photoCount = sources.size
     var photoIndex by mutableIntStateOf(0)
         private set
@@ -120,7 +124,7 @@ class CropViewModel(
                 imageHeight = bmp.height
                 image = bmp.asImageBitmap()
                 // Left to right, so stepping through them with previous/next is predictable.
-                faces = try {
+                faces = if (iconMode) emptyList() else try {
                     app.container.faceDetector.detect(bmp).sortedBy { it.centerX }
                 } catch (e: Exception) {
                     emptyList()
@@ -167,18 +171,27 @@ class CropViewModel(
         crop = crop?.let { CropMath.resizeTo(it, x, y, imageWidth, imageHeight) }
     }
 
-    /** Saves the current crop for [target]. [onSaved] receives the person id. */
+    val canSave get() = crop != null && (iconMode || target != null) && !saving
+
+    /**
+     * Saves the current crop for [target], or as the group icon in [iconMode]. [onSaved] receives the
+     * person id (0 for an icon).
+     */
     fun save(onSaved: (personId: Long) -> Unit) {
         val bmp = bitmap ?: return
         val c = crop ?: return
-        val personId = target ?: return
+        val personId = if (iconMode) 0L else target ?: return
         saving = true
         viewModelScope.launch {
             try {
                 val (img, thumb) = withContext(Dispatchers.Default) { ImageUtils.cropToJpegs(bmp, c) }
-                repo.addPhoto(personId, img, thumb)
-                savedFor = savedFor + personId
-                selectedFace?.let { doneFaces = doneFaces + it }
+                if (iconMode) {
+                    repo.setGroupIcon(iconGroupId, thumb)
+                } else {
+                    repo.addPhoto(personId, img, thumb)
+                    savedFor = savedFor + personId
+                    selectedFace?.let { doneFaces = doneFaces + it }
+                }
                 onSaved(personId)
             } finally {
                 saving = false

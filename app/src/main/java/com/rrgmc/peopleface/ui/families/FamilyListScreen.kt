@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Label
@@ -24,6 +25,8 @@ import androidx.compose.material.icons.filled.AddAPhoto
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.HideImage
+import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Quiz
 import androidx.compose.material.icons.filled.PersonAdd
@@ -48,6 +51,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
@@ -61,6 +65,7 @@ import com.rrgmc.peopleface.data.db.TagEntity
 import com.rrgmc.peopleface.data.sortedByName
 import com.rrgmc.peopleface.ui.common.Avatar
 import com.rrgmc.peopleface.ui.common.ConfirmDialog
+import com.rrgmc.peopleface.ui.common.GroupIcon
 import com.rrgmc.peopleface.ui.common.NameNotesDialog
 import com.rrgmc.peopleface.ui.common.PhotoSourceMenu
 import com.rrgmc.peopleface.ui.common.TagChip
@@ -79,6 +84,7 @@ fun FamilyListScreen(
     onNewFamily: (groupId: Long) -> Unit,
     onAddIndividuals: (groupId: Long) -> Unit,
     onCropGroupPhoto: (groupId: Long, fileNames: List<String>) -> Unit,
+    onCropGroupIcon: (groupId: Long, fileNames: List<String>) -> Unit,
     onManageTags: (groupId: Long) -> Unit,
 ) {
     val repo = appContainer().repository
@@ -93,6 +99,8 @@ fun FamilyListScreen(
     var menu by remember { mutableStateOf(false) }
     var photoMenu by remember { mutableStateOf(false) }
     val photoSource = rememberPhotoSource { onCropGroupPhoto(groupId, it) }
+    var iconMenu by remember { mutableStateOf(false) }
+    val iconSource = rememberPhotoSource { onCropGroupIcon(groupId, it) }
     val context = LocalContext.current
     var faceSize by remember { mutableStateOf(loadFaceSize(context)) }
     var editing by rememberSaveable { mutableStateOf(false) }
@@ -101,7 +109,22 @@ fun FamilyListScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(group?.name.orEmpty(), maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                title = {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        // Tapping the icon (or the groups symbol while there is none) picks a new one.
+                        if (group != null) {
+                            PhotoSourceMenu(iconSource, iconMenu, { iconMenu = false }) {
+                                GroupIcon(
+                                    group?.icon,
+                                    Modifier.clip(RoundedCornerShape(8.dp)).clickable { iconMenu = true },
+                                    size = 36.dp,
+                                )
+                            }
+                            Spacer(Modifier.width(12.dp))
+                        }
+                        Text(group?.name.orEmpty(), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    }
+                },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back))
@@ -115,10 +138,15 @@ fun FamilyListScreen(
                             }
                         }
                     }
-                    IconButton(onClick = { onQuiz(groupId) }) { Icon(Icons.Default.Quiz, stringResource(R.string.quiz)) }
+                    // Everything else is in the menu, leaving room for the group name.
                     Box {
                         IconButton(onClick = { menu = true }) { Icon(Icons.Default.MoreVert, null) }
                         DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.quiz)) },
+                                leadingIcon = { Icon(Icons.Default.Quiz, null) },
+                                onClick = { menu = false; onQuiz(groupId) },
+                            )
                             DropdownMenuItem(
                                 text = { Text(stringResource(R.string.add_individuals)) },
                                 leadingIcon = { Icon(Icons.Default.PersonAdd, null) },
@@ -129,6 +157,20 @@ fun FamilyListScreen(
                                 leadingIcon = { Icon(Icons.AutoMirrored.Filled.Label, null) },
                                 onClick = { menu = false; onManageTags(groupId) },
                             )
+                            DropdownMenuItem(
+                                text = {
+                                    Text(stringResource(if (group?.icon == null) R.string.set_group_icon else R.string.change_group_icon))
+                                },
+                                leadingIcon = { Icon(Icons.Default.Image, null) },
+                                onClick = { menu = false; iconMenu = true },
+                            )
+                            if (group?.icon != null) {
+                                DropdownMenuItem(
+                                    text = { Text(stringResource(R.string.remove_group_icon)) },
+                                    leadingIcon = { Icon(Icons.Default.HideImage, null) },
+                                    onClick = { menu = false; scope.launch { repo.setGroupIcon(groupId, null) } },
+                                )
+                            }
                             DropdownMenuItem(
                                 text = { Text(stringResource(R.string.edit)) },
                                 leadingIcon = { Icon(Icons.Default.Edit, null) },

@@ -2,7 +2,8 @@
 
 Android app to remember people's names.
 
-- **Groups**: where people are from (kid's school, club A, club B…).
+- **Groups**: where people are from (kid's school, club A, club B…). A group can have an icon, cut from a
+  picture like a face but without face detection (tap the icon in the group screen's title).
 - **Families** inside a group: father, mother, any number of kids, or other people (grandma, nanny…).
   A family can be a single person, and the family name is optional.
 - **Tags**: short colored labels defined per group (group menu → Tags). A family can have one tag (set on the family or person screen), shown

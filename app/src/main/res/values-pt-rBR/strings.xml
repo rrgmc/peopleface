@@ -106,6 +106,12 @@
     <string name="who_is_this">Quem é?</string>
     <string name="save_face">Salvar rosto</string>
     <string name="photo_saved_for">Foto salva para %1$s</string>
+    <string name="group_icon_title">Ícone do grupo</string>
+    <string name="group_icon_hint">Arraste o quadrado ou um canto para escolher o ícone, faça pinça para ampliar.</string>
+    <string name="save_icon">Salvar ícone</string>
+    <string name="set_group_icon">Definir ícone</string>
+    <string name="change_group_icon">Trocar ícone</string>
+    <string name="remove_group_icon">Remover ícone</string>
 
     <!-- Search -->
     <string name="search_hint">Nome, família, grupo, anotações…</string>

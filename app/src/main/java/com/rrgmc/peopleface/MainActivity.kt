@@ -124,10 +124,12 @@ object Routes {
 
     /**
      * Crop a face for [personId], or (with [familyId] / [groupId]) for anyone of that family / group.
+     * With [iconGroupId], crop the icon of that group instead (no face detection).
      * [fileName] is a temporary copy of the picture in the app's cache (see rememberPhotoSource).
      */
-    fun crop(fileNames: List<String>, personId: Long = 0, familyId: Long = 0, groupId: Long = 0) =
-        "crop?files=${Uri.encode(fileNames.joinToString(","))}&personId=$personId&familyId=$familyId&groupId=$groupId"
+    fun crop(fileNames: List<String>, personId: Long = 0, familyId: Long = 0, groupId: Long = 0, iconGroupId: Long = 0) =
+        "crop?files=${Uri.encode(fileNames.joinToString(","))}&personId=$personId&familyId=$familyId&groupId=$groupId" +
+            "&iconGroupId=$iconGroupId"
 }
 
 /** [sharedFiles]: pictures shared from another app; a group is asked for, then their faces are cropped. */
@@ -169,6 +171,7 @@ private fun AppNavigation(sharedFiles: List<String>, onSharedHandled: () -> Unit
                 onNewFamily = { groupId -> nav.navigate(Routes.addPeople(groupId)) },
                 onAddIndividuals = { groupId -> nav.navigate(Routes.addIndividuals(groupId)) },
                 onCropGroupPhoto = { groupId, files -> nav.navigate(Routes.crop(files, groupId = groupId)) },
+                onCropGroupIcon = { groupId, files -> nav.navigate(Routes.crop(files, iconGroupId = groupId)) },
                 onManageTags = { groupId -> nav.navigate(Routes.tags(groupId)) },
             )
         }
@@ -224,12 +227,13 @@ private fun AppNavigation(sharedFiles: List<String>, onSharedHandled: () -> Unit
             )
         }
         composable(
-            "crop?files={files}&personId={personId}&familyId={familyId}&groupId={groupId}",
+            "crop?files={files}&personId={personId}&familyId={familyId}&groupId={groupId}&iconGroupId={iconGroupId}",
             listOf(
                 navArgument("files") { type = NavType.StringType },
                 navArgument("personId") { type = NavType.LongType; defaultValue = 0L },
                 navArgument("familyId") { type = NavType.LongType; defaultValue = 0L },
                 navArgument("groupId") { type = NavType.LongType; defaultValue = 0L },
+                navArgument("iconGroupId") { type = NavType.LongType; defaultValue = 0L },
             ),
         ) {
             val args = it.arguments!!
@@ -238,6 +242,7 @@ private fun AppNavigation(sharedFiles: List<String>, onSharedHandled: () -> Unit
                 personId = args.getLong("personId"),
                 familyId = args.getLong("familyId"),
                 groupId = args.getLong("groupId"),
+                iconGroupId = args.getLong("iconGroupId"),
                 onDone = back,
             )
         }

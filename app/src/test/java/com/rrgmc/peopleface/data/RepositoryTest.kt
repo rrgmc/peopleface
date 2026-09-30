@@ -38,6 +38,23 @@ class RepositoryTest {
     fun tearDown() = db.close()
 
     @Test
+    fun groupIconCanBeSetKeptOnEditAndRemoved() = runTest {
+        val group = repo.addGroup("School")
+        assertNull(repo.observeGroup(group).first()!!.icon)
+
+        repo.setGroupIcon(group, byteArrayOf(1, 2, 3))
+        val withIcon = repo.observeGroup(group).first()!!
+        assertEquals(listOf<Byte>(1, 2, 3), withIcon.icon?.toList())
+        assertEquals(listOf<Byte>(1, 2, 3), repo.observeGroups().first().single().group.icon?.toList())
+
+        repo.updateGroup(withIcon.copy(name = "Club"))
+        assertEquals(listOf<Byte>(1, 2, 3), repo.observeGroup(group).first()!!.icon?.toList())
+
+        repo.setGroupIcon(group, null)
+        assertNull(repo.observeGroup(group).first()!!.icon)
+    }
+
+    @Test
     fun familyWithManyKidsIsOrderedParentsFirst() = runTest {
         val group = repo.addGroup("School")
         val family = repo.addFamily(group, "Silva")
