@@ -56,7 +56,7 @@ class MigrationTest {
 
         // Opening with the app's Room setup runs the migration and validates the resulting schema.
         val room = Room.databaseBuilder(context, AppDatabase::class.java, file.path)
-            .addMigrations(AppDatabase.MIGRATION_1_2, AppDatabase.MIGRATION_2_3, AppDatabase.MIGRATION_3_4)
+            .addMigrations(AppDatabase.MIGRATION_1_2, AppDatabase.MIGRATION_2_3, AppDatabase.MIGRATION_3_4, AppDatabase.MIGRATION_4_5)
             .allowMainThreadQueries()
             .build()
         try {
@@ -76,7 +76,7 @@ class MigrationTest {
                 ),
                 rows,
             )
-            assertEquals(4, room.openHelper.readableDatabase.version)
+            assertEquals(5, room.openHelper.readableDatabase.version)
         } finally {
             room.close()
         }
@@ -95,12 +95,12 @@ class MigrationTest {
         }
 
         val room = Room.databaseBuilder(context, AppDatabase::class.java, file.path)
-            .addMigrations(AppDatabase.MIGRATION_1_2, AppDatabase.MIGRATION_2_3, AppDatabase.MIGRATION_3_4)
+            .addMigrations(AppDatabase.MIGRATION_1_2, AppDatabase.MIGRATION_2_3, AppDatabase.MIGRATION_3_4, AppDatabase.MIGRATION_4_5)
             .allowMainThreadQueries()
             .build()
         try {
             val db = room.openHelper.writableDatabase
-            assertEquals(4, db.version)
+            assertEquals(5, db.version)
             fun tagId() = db.query("SELECT tag_id FROM families WHERE id = 1").use { c ->
                 c.moveToFirst()
                 if (c.isNull(0)) null else c.getLong(0)
@@ -124,12 +124,12 @@ class MigrationTest {
         }
 
         val room = Room.databaseBuilder(context, AppDatabase::class.java, file.path)
-            .addMigrations(AppDatabase.MIGRATION_1_2, AppDatabase.MIGRATION_2_3, AppDatabase.MIGRATION_3_4)
+            .addMigrations(AppDatabase.MIGRATION_1_2, AppDatabase.MIGRATION_2_3, AppDatabase.MIGRATION_3_4, AppDatabase.MIGRATION_4_5)
             .allowMainThreadQueries()
             .build()
         try {
             val db = room.openHelper.writableDatabase
-            assertEquals(4, db.version)
+            assertEquals(5, db.version)
             fun icon() = db.query("SELECT icon FROM origin_groups WHERE id = 1").use { c ->
                 c.moveToFirst()
                 if (c.isNull(0)) null else c.getBlob(0).toList()
@@ -137,6 +137,35 @@ class MigrationTest {
             assertEquals(null, icon())
             db.execSQL("UPDATE origin_groups SET icon = X'0102' WHERE id = 1")
             assertEquals(listOf<Byte>(1, 2), icon())
+        } finally {
+            room.close()
+        }
+    }
+
+    @Test
+    fun personsAreNotPlaceholders() {
+        val file = context.getDatabasePath("migration-test-5.db").apply { parentFile?.mkdirs(); delete() }
+        createDatabase(file, 4).use { db ->
+            db.execSQL("INSERT INTO origin_groups (id, name, notes, created_at) VALUES (1, 'School', '', 0)")
+            db.execSQL("INSERT INTO families (id, group_id, name, notes, created_at) VALUES (1, 1, '', '', 0)")
+            db.execSQL(
+                "INSERT INTO persons (id, family_id, name, role, role_label, notes, thumbnail_photo_id, sort_order, created_at) " +
+                    "VALUES (1, 1, 'Ana', 'CHILD', '', '', NULL, 1, 0)"
+            )
+        }
+
+        val room = Room.databaseBuilder(context, AppDatabase::class.java, file.path)
+            .addMigrations(AppDatabase.MIGRATION_1_2, AppDatabase.MIGRATION_2_3, AppDatabase.MIGRATION_3_4, AppDatabase.MIGRATION_4_5)
+            .allowMainThreadQueries()
+            .build()
+        try {
+            val db = room.openHelper.readableDatabase
+            assertEquals(5, db.version)
+            val placeholder = db.query("SELECT is_placeholder FROM persons WHERE id = 1").use { c ->
+                c.moveToFirst()
+                c.getInt(0)
+            }
+            assertEquals(0, placeholder)
         } finally {
             room.close()
         }

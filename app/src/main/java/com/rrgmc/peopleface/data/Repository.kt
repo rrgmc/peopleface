@@ -53,7 +53,9 @@ class Repository(private val db: AppDatabase) {
     fun observeAllPersons() = persons.observeAllRows().map { list -> list.sortedByName { it.person.name } }
     suspend fun personsWithPhotos(groupId: Long) = persons.rowsWithPhotos(groupId)
 
-    suspend fun addPerson(familyId: Long, name: String, role: Role, notes: String = ""): Long =
+    suspend fun addPerson(
+        familyId: Long, name: String, role: Role, notes: String = "", placeholder: Boolean = false,
+    ): Long =
         db.withTransaction {
             persons.insert(
                 PersonEntity(
@@ -61,13 +63,14 @@ class Repository(private val db: AppDatabase) {
                     name = name.trim(),
                     role = role,
                     notes = notes.trim(),
+                    isPlaceholder = placeholder,
                     sortOrder = persons.maxSortOrder(familyId) + 1,
                 )
             )
         }
 
     /** A person to be added; blank names are skipped by [addPeople]. */
-    data class NewPerson(val name: String, val role: Role)
+    data class NewPerson(val name: String, val role: Role, val placeholder: Boolean = false)
 
     /**
      * Adds all non-blank [people] in order. With [familyId] 0 a new family is created in [groupId]
@@ -78,14 +81,14 @@ class Repository(private val db: AppDatabase) {
             val toAdd = people.filter { it.name.isNotBlank() }
             if (familyId == 0L && toAdd.isEmpty() && familyName.isBlank()) return@withTransaction null
             val id = if (familyId != 0L) familyId else addFamily(groupId, familyName)
-            toAdd.forEach { addPerson(id, it.name, it.role) }
+            toAdd.forEach { addPerson(id, it.name, it.role, placeholder = it.placeholder) }
             id
         }
 
     /** Adds each non-blank person as a one-person family (without a family name) in [groupId]. */
     suspend fun addIndividuals(groupId: Long, people: List<NewPerson>): Int = db.withTransaction {
         val toAdd = people.filter { it.name.isNotBlank() }
-        toAdd.forEach { addPerson(addFamily(groupId, ""), it.name, it.role) }
+        toAdd.forEach { addPerson(addFamily(groupId, ""), it.name, it.role, placeholder = it.placeholder) }
         toAdd.size
     }
 

@@ -30,12 +30,12 @@ import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Quiz
 import androidx.compose.material.icons.filled.PersonAdd
+import androidx.compose.material.icons.filled.PhotoSizeSelectLarge
 import androidx.compose.material3.Card
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -64,6 +64,7 @@ import com.rrgmc.peopleface.data.db.PersonRow
 import com.rrgmc.peopleface.data.db.TagEntity
 import com.rrgmc.peopleface.data.sortedByName
 import com.rrgmc.peopleface.ui.common.Avatar
+import com.rrgmc.peopleface.ui.common.nameStyle
 import com.rrgmc.peopleface.ui.common.ConfirmDialog
 import com.rrgmc.peopleface.ui.common.GroupIcon
 import com.rrgmc.peopleface.ui.common.NameNotesDialog
@@ -98,6 +99,7 @@ fun FamilyListScreen(
 
     var menu by remember { mutableStateOf(false) }
     var photoMenu by remember { mutableStateOf(false) }
+    var sizeMenu by remember { mutableStateOf(false) }
     val photoSource = rememberPhotoSource { onCropGroupPhoto(groupId, it) }
     var iconMenu by remember { mutableStateOf(false) }
     val iconSource = rememberPhotoSource { onCropGroupIcon(groupId, it) }
@@ -131,17 +133,34 @@ fun FamilyListScreen(
                     }
                 },
                 actions = {
-                    if (persons.isNotEmpty()) {
-                        PhotoSourceMenu(photoSource, photoMenu, { photoMenu = false }) {
-                            IconButton(onClick = { photoMenu = true }) {
-                                Icon(Icons.Default.AddAPhoto, stringResource(R.string.faces_from_group_photo))
+                    Box {
+                        IconButton(onClick = { sizeMenu = true }) {
+                            Icon(Icons.Default.PhotoSizeSelectLarge, stringResource(R.string.face_size))
+                        }
+                        DropdownMenu(expanded = sizeMenu, onDismissRequest = { sizeMenu = false }) {
+                            FaceSize.entries.forEach { size ->
+                                DropdownMenuItem(
+                                    text = { Text(stringResource(size.label)) },
+                                    leadingIcon = {
+                                        if (size == faceSize) Icon(Icons.Default.Check, null) else Spacer(Modifier.size(24.dp))
+                                    },
+                                    onClick = { sizeMenu = false; faceSize = size; saveFaceSize(context, size) },
+                                )
                             }
                         }
                     }
-                    // Everything else is in the menu, leaving room for the group name.
-                    Box {
+                    // Everything else is in the menu, leaving room for the group name. The photo source
+                    // choices for "Faces from a photo" open from the same spot.
+                    PhotoSourceMenu(photoSource, photoMenu, { photoMenu = false }) {
                         IconButton(onClick = { menu = true }) { Icon(Icons.Default.MoreVert, null) }
                         DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
+                            if (persons.isNotEmpty()) {
+                                DropdownMenuItem(
+                                    text = { Text(stringResource(R.string.faces_from_group_photo)) },
+                                    leadingIcon = { Icon(Icons.Default.AddAPhoto, null) },
+                                    onClick = { menu = false; photoMenu = true },
+                                )
+                            }
                             DropdownMenuItem(
                                 text = { Text(stringResource(R.string.quiz)) },
                                 leadingIcon = { Icon(Icons.Default.Quiz, null) },
@@ -181,21 +200,6 @@ fun FamilyListScreen(
                                 leadingIcon = { Icon(Icons.Default.Delete, null) },
                                 onClick = { menu = false; deleting = true },
                             )
-                            HorizontalDivider()
-                            DropdownMenuItem(
-                                text = { Text(stringResource(R.string.face_size), style = MaterialTheme.typography.labelMedium) },
-                                enabled = false,
-                                onClick = {},
-                            )
-                            FaceSize.entries.forEach { size ->
-                                DropdownMenuItem(
-                                    text = { Text(stringResource(size.label)) },
-                                    leadingIcon = {
-                                        if (size == faceSize) Icon(Icons.Default.Check, null) else Spacer(Modifier.size(24.dp))
-                                    },
-                                    onClick = { menu = false; faceSize = size; saveFaceSize(context, size) },
-                                )
-                            }
                         }
                     }
                 },
@@ -337,7 +341,7 @@ private fun FamilyCard(
                             }
                             Text(
                                 m.person.name,
-                                style = MaterialTheme.typography.labelMedium,
+                                style = nameStyle(m.person, MaterialTheme.typography.labelMedium),
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
                                 textAlign = TextAlign.Center,

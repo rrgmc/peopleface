@@ -54,6 +54,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.rrgmc.peopleface.R
 import com.rrgmc.peopleface.appContainer
 import com.rrgmc.peopleface.ui.common.AsyncBlobImage
+import com.rrgmc.peopleface.ui.common.nameStyle
 import com.rrgmc.peopleface.ui.common.ChooseTagDialog
 import com.rrgmc.peopleface.ui.common.ConfirmDialog
 import com.rrgmc.peopleface.ui.common.PersonDialog
@@ -92,7 +93,7 @@ fun PersonDetailScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(r?.person?.name.orEmpty()) },
+                title = { r?.person?.let { Text(it.name, style = nameStyle(it)) } },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back))
@@ -122,9 +123,14 @@ fun PersonDetailScreen(
                         contentDescription = p.name,
                         role = p.role,
                     ) { p.thumbnailPhotoId?.let { repo.photoImage(it) } }
-                    Text(p.name, style = MaterialTheme.typography.headlineMedium, modifier = Modifier.padding(top = 12.dp))
+                    Text(p.name, style = nameStyle(p, MaterialTheme.typography.headlineMedium), modifier = Modifier.padding(top = 12.dp))
                     Text(
-                        listOf(roleText(p), r.familyName, r.groupName).filter { it.isNotBlank() }.joinToString(" · "),
+                        listOf(
+                            roleText(p),
+                            if (p.isPlaceholder) stringResource(R.string.placeholder) else "",
+                            r.familyName,
+                            r.groupName,
+                        ).filter { it.isNotBlank() }.joinToString(" · "),
                         style = MaterialTheme.typography.bodyMedium,
                         textAlign = TextAlign.Center,
                     )
@@ -232,8 +238,11 @@ fun PersonDetailScreen(
             initialName = p.name,
             initialRole = p.role,
             initialNotes = p.notes,
-            onSave = { name, role, notes ->
-                scope.launch { repo.updatePerson(p.copy(name = name, role = role, notes = notes)) }
+            initialPlaceholder = p.isPlaceholder,
+            onSave = { name, role, notes, placeholder ->
+                scope.launch {
+                    repo.updatePerson(p.copy(name = name, role = role, notes = notes, isPlaceholder = placeholder))
+                }
             },
             onDismiss = { editing = false },
         )

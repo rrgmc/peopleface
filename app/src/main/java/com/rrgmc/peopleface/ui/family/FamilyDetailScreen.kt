@@ -47,6 +47,7 @@ import com.rrgmc.peopleface.R
 import com.rrgmc.peopleface.appContainer
 import com.rrgmc.peopleface.data.db.Role
 import com.rrgmc.peopleface.ui.common.Avatar
+import com.rrgmc.peopleface.ui.common.nameStyle
 import com.rrgmc.peopleface.ui.common.ChooseTagDialog
 import com.rrgmc.peopleface.ui.common.TagChip
 import com.rrgmc.peopleface.ui.common.ConfirmDialog
@@ -159,9 +160,9 @@ fun FamilyDetailScreen(
                 val kidIndex = kids.indexOfFirst { it.person.id == p.id }
                 ListItem(
                     leadingContent = { Avatar(row.thumb, row.person.role, size = 80.dp) },
-                    headlineContent = { Text(p.name) },
+                    headlineContent = { Text(p.name, style = nameStyle(p)) },
                     supportingContent = {
-                        val role = roleText(p)
+                        val role = if (p.isPlaceholder) "${roleText(p)} · ${stringResource(R.string.placeholder)}" else roleText(p)
                         Text(if (p.notes.isBlank()) role else "$role · ${p.notes}", maxLines = 2, overflow = TextOverflow.Ellipsis)
                     },
                     trailingContent = if (kidIndex >= 0 && kids.size > 1) {

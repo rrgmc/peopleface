@@ -102,10 +102,14 @@ interface PersonDao {
     @Query("$PERSON_ROW_SELECT ORDER BY p.name COLLATE NOCASE")
     fun observeAllRows(): Flow<List<PersonRow>>
 
-    /** People that have at least one photo, optionally restricted to a group (0 = all groups). */
+    /**
+     * People with a real name (not a placeholder) that have at least one photo, optionally restricted to a
+     * group (0 = all groups).
+     */
     @Query(
         """$PERSON_ROW_SELECT
-        WHERE EXISTS (SELECT 1 FROM photos x WHERE x.person_id = p.id)
+        WHERE p.is_placeholder = 0
+          AND EXISTS (SELECT 1 FROM photos x WHERE x.person_id = p.id)
           AND (:groupId = 0 OR f.group_id = :groupId)"""
     )
     suspend fun rowsWithPhotos(groupId: Long): List<PersonRow>

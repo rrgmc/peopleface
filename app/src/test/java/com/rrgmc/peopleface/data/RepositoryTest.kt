@@ -213,6 +213,37 @@ class RepositoryTest {
     }
 
     @Test
+    fun placeholderNamesAreLeftOutOfQuizAndSearch() = runTest {
+        val g = repo.addGroup("School")
+        val f = repo.addPeople(g, 0, "", listOf(
+            Repository.NewPerson("Pai", Role.ADULT, placeholder = true),
+            Repository.NewPerson("Suzi", Role.ADULT),
+            Repository.NewPerson("Bento", Role.CHILD),
+        ))!!
+        val rows = repo.observePersonsInFamily(f).first()
+        fun row(name: String) = rows.single { it.person.name == name }
+        assertTrue(row("Pai").person.isPlaceholder)
+        assertFalse(row("Bento").person.isPlaceholder)
+        rows.forEach { repo.addPhoto(it.person.id, byteArrayOf(1), byteArrayOf(1)) }
+
+        // Not a quiz target nor a wrong answer.
+        assertEquals(listOf("Bento", "Suzi"), repo.personsWithPhotos(g).map { it.person.name }.sorted())
+
+        // Neither the placeholder's own name nor the kid's family label matches "pai".
+        val labels = familyLabels(rows)
+        assertEquals("Suzi", labels[row("Bento").person.id])
+        assertEquals("Suzi", labels[row("Pai").person.id])
+        assertFalse(row("Pai").matches(normalizeForSearch("pai"), labels[row("Pai").person.id]!!))
+        assertFalse(row("Bento").matches(normalizeForSearch("pai"), labels[row("Bento").person.id]!!))
+        // The placeholder can still be found through their family.
+        assertTrue(row("Pai").matches(normalizeForSearch("suzi"), labels[row("Pai").person.id]!!))
+
+        // The flag can be cleared once the real name is known.
+        repo.updatePerson(row("Pai").person.copy(name = "Michelangelo", isPlaceholder = false))
+        assertEquals(listOf("Bento", "Michelangelo", "Suzi"), repo.personsWithPhotos(g).map { it.person.name }.sorted())
+    }
+
+    @Test
     fun quizOptionsContainTargetAndUniqueNames() = runTest {
         val f = repo.addFamily(repo.addGroup("G"), "")
         listOf("Ana", "Bia", "Caio", "Duda", "Eva", "Ana").forEach { repo.addPerson(f, it, Role.CHILD) }

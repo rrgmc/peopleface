@@ -96,6 +96,11 @@ data class PersonEntity(
     @ColumnInfo(name = "thumbnail_photo_id") val thumbnailPhotoId: Long? = null,
     @ColumnInfo(name = "sort_order") val sortOrder: Int = 0,
     @ColumnInfo(name = "created_at") val createdAt: Long = System.currentTimeMillis(),
+    /**
+     * The name is only a label such as "Pai" / "Mãe" until the real name is known: it is shown but left out
+     * of search and the quiz (database v5).
+     */
+    @ColumnInfo(name = "is_placeholder", defaultValue = "0") val isPlaceholder: Boolean = false,
 )
 
 /** A face cropped from a larger photo. Both images are JPEG bytes stored in the database. */
