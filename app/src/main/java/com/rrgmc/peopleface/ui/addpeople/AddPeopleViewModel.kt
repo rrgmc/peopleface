@@ -27,8 +27,8 @@ class AddPeopleViewModel(
     val familyId: Long,
     val individuals: Boolean = false,
 ) : ViewModel() {
-    /** Role of new rows (each row has its own role selector). */
-    private val defaultRole = Role.CHILD
+    /** Role of new rows (each row has its own role selector): individuals are usually adults, family additions kids. */
+    private val defaultRole = if (individuals) Role.ADULT else Role.CHILD
     private var nextKey = 0
 
     val rows = mutableStateListOf<PersonRowState>()
