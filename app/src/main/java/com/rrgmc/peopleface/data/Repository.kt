@@ -30,10 +30,25 @@ class Repository(private val db: AppDatabase) {
     suspend fun setGroupIcon(groupId: Long, icon: ByteArray?) = groups.setIcon(groupId, icon)
 
     // Families
-    fun observeFamilies(groupId: Long) = families.observeByGroup(groupId).map { list -> list.sortedByName { it.name } }
+    /** In the order set by dragging; new families go last. */
+    fun observeFamilies(groupId: Long) =
+        families.observeByGroup(groupId).map { list -> list.sortedByName { it.name }.sortedBy { it.sortOrder } }
     fun observeFamily(id: Long) = families.observe(id)
-    suspend fun addFamily(groupId: Long, name: String, notes: String = "") =
-        families.insert(FamilyEntity(groupId = groupId, name = name.trim(), notes = notes.trim()))
+    suspend fun addFamily(groupId: Long, name: String, notes: String = "") = db.withTransaction {
+        families.insert(
+            FamilyEntity(
+                groupId = groupId,
+                name = name.trim(),
+                notes = notes.trim(),
+                sortOrder = families.maxSortOrder(groupId) + 1,
+            )
+        )
+    }
+
+    /** Gives the families [familyIds] (all of one group) the positions 1, 2, 3… */
+    suspend fun reorderFamilies(familyIds: List<Long>) = db.withTransaction {
+        familyIds.forEachIndexed { i, id -> families.setSortOrder(id, i + 1) }
+    }
     suspend fun updateFamily(family: FamilyEntity) = families.update(family)
     suspend fun deleteFamily(family: FamilyEntity) = families.delete(family)
     suspend fun setFamilyTag(familyId: Long, tagId: Long?) = families.setTag(familyId, tagId)

@@ -71,6 +71,12 @@ interface FamilyDao {
 
     @Query("UPDATE families SET tag_id = :tagId WHERE id = :familyId")
     suspend fun setTag(familyId: Long, tagId: Long?)
+
+    @Query("SELECT COALESCE(MAX(sort_order), 0) FROM families WHERE group_id = :groupId")
+    suspend fun maxSortOrder(groupId: Long): Int
+
+    @Query("UPDATE families SET sort_order = :sortOrder WHERE id = :familyId")
+    suspend fun setSortOrder(familyId: Long, sortOrder: Int)
 }
 
 @Dao

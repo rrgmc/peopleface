@@ -5,6 +5,8 @@ import android.database.sqlite.SQLiteDatabase
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import com.rrgmc.peopleface.data.db.AppDatabase
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.runBlocking
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
 import org.junit.Test
@@ -56,7 +58,7 @@ class MigrationTest {
 
         // Opening with the app's Room setup runs the migration and validates the resulting schema.
         val room = Room.databaseBuilder(context, AppDatabase::class.java, file.path)
-            .addMigrations(AppDatabase.MIGRATION_1_2, AppDatabase.MIGRATION_2_3, AppDatabase.MIGRATION_3_4, AppDatabase.MIGRATION_4_5)
+            .addMigrations(AppDatabase.MIGRATION_1_2, AppDatabase.MIGRATION_2_3, AppDatabase.MIGRATION_3_4, AppDatabase.MIGRATION_4_5, AppDatabase.MIGRATION_5_6)
             .allowMainThreadQueries()
             .build()
         try {
@@ -76,7 +78,7 @@ class MigrationTest {
                 ),
                 rows,
             )
-            assertEquals(5, room.openHelper.readableDatabase.version)
+            assertEquals(6, room.openHelper.readableDatabase.version)
         } finally {
             room.close()
         }
@@ -95,12 +97,12 @@ class MigrationTest {
         }
 
         val room = Room.databaseBuilder(context, AppDatabase::class.java, file.path)
-            .addMigrations(AppDatabase.MIGRATION_1_2, AppDatabase.MIGRATION_2_3, AppDatabase.MIGRATION_3_4, AppDatabase.MIGRATION_4_5)
+            .addMigrations(AppDatabase.MIGRATION_1_2, AppDatabase.MIGRATION_2_3, AppDatabase.MIGRATION_3_4, AppDatabase.MIGRATION_4_5, AppDatabase.MIGRATION_5_6)
             .allowMainThreadQueries()
             .build()
         try {
             val db = room.openHelper.writableDatabase
-            assertEquals(5, db.version)
+            assertEquals(6, db.version)
             fun tagId() = db.query("SELECT tag_id FROM families WHERE id = 1").use { c ->
                 c.moveToFirst()
                 if (c.isNull(0)) null else c.getLong(0)
@@ -124,12 +126,12 @@ class MigrationTest {
         }
 
         val room = Room.databaseBuilder(context, AppDatabase::class.java, file.path)
-            .addMigrations(AppDatabase.MIGRATION_1_2, AppDatabase.MIGRATION_2_3, AppDatabase.MIGRATION_3_4, AppDatabase.MIGRATION_4_5)
+            .addMigrations(AppDatabase.MIGRATION_1_2, AppDatabase.MIGRATION_2_3, AppDatabase.MIGRATION_3_4, AppDatabase.MIGRATION_4_5, AppDatabase.MIGRATION_5_6)
             .allowMainThreadQueries()
             .build()
         try {
             val db = room.openHelper.writableDatabase
-            assertEquals(5, db.version)
+            assertEquals(6, db.version)
             fun icon() = db.query("SELECT icon FROM origin_groups WHERE id = 1").use { c ->
                 c.moveToFirst()
                 if (c.isNull(0)) null else c.getBlob(0).toList()
@@ -155,17 +157,39 @@ class MigrationTest {
         }
 
         val room = Room.databaseBuilder(context, AppDatabase::class.java, file.path)
-            .addMigrations(AppDatabase.MIGRATION_1_2, AppDatabase.MIGRATION_2_3, AppDatabase.MIGRATION_3_4, AppDatabase.MIGRATION_4_5)
+            .addMigrations(AppDatabase.MIGRATION_1_2, AppDatabase.MIGRATION_2_3, AppDatabase.MIGRATION_3_4, AppDatabase.MIGRATION_4_5, AppDatabase.MIGRATION_5_6)
             .allowMainThreadQueries()
             .build()
         try {
             val db = room.openHelper.readableDatabase
-            assertEquals(5, db.version)
+            assertEquals(6, db.version)
             val placeholder = db.query("SELECT is_placeholder FROM persons WHERE id = 1").use { c ->
                 c.moveToFirst()
                 c.getInt(0)
             }
             assertEquals(0, placeholder)
+        } finally {
+            room.close()
+        }
+    }
+
+    @Test
+    fun familiesKeepTheirOrderByName() {
+        val file = context.getDatabasePath("migration-test-6.db").apply { parentFile?.mkdirs(); delete() }
+        createDatabase(file, 5).use { db ->
+            db.execSQL("INSERT INTO origin_groups (id, name, notes, created_at) VALUES (1, 'School', '', 0)")
+            db.execSQL("INSERT INTO families (id, group_id, name, notes, created_at) VALUES (1, 1, 'Silva', '', 0)")
+            db.execSQL("INSERT INTO families (id, group_id, name, notes, created_at) VALUES (2, 1, 'Costa', '', 0)")
+        }
+
+        val room = Room.databaseBuilder(context, AppDatabase::class.java, file.path)
+            .addMigrations(AppDatabase.MIGRATION_5_6)
+            .allowMainThreadQueries()
+            .build()
+        try {
+            assertEquals(6, room.openHelper.readableDatabase.version)
+            val names = runBlocking { Repository(room).observeFamilies(1).first().map { it.name } }
+            assertEquals(listOf("Costa", "Silva"), names)
         } finally {
             room.close()
         }
