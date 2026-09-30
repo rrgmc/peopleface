@@ -64,6 +64,13 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    /** "Share" while the app already runs (it is singleTask): take the pictures here, keeping the current screen. */
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        receiveShared(intent)
+    }
+
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         outState.putStringArrayList(KEY_SHARED_FILES, ArrayList(sharedFiles))
