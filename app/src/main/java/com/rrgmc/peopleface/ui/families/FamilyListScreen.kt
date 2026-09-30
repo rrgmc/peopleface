@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -66,6 +67,9 @@ import com.rrgmc.peopleface.data.sortedByName
 import com.rrgmc.peopleface.ui.common.Avatar
 import com.rrgmc.peopleface.ui.common.nameStyle
 import com.rrgmc.peopleface.ui.common.ConfirmDialog
+import com.rrgmc.peopleface.ui.common.dragReorder
+import com.rrgmc.peopleface.ui.common.draggableItem
+import com.rrgmc.peopleface.ui.common.rememberDragReorderState
 import com.rrgmc.peopleface.ui.common.GroupIcon
 import com.rrgmc.peopleface.ui.common.NameNotesDialog
 import com.rrgmc.peopleface.ui.common.PhotoSourceMenu
@@ -213,9 +217,35 @@ fun FamilyListScreen(
             )
         },
     ) { padding ->
+        // One-person families are shown together in a single card at the top; the others can be dragged.
+        val (singleFamilies, dbOtherFamilies) = families.orEmpty().partition { membersByFamily[it.id].orEmpty().size == 1 }
+        // While dragging, and until the database has the new order: the order on screen.
+        var dragOrder by remember(families) { mutableStateOf<List<Long>?>(null) }
+        val otherFamilies = dragOrder?.let { order ->
+            val byId = dbOtherFamilies.associateBy { it.id }
+            order.mapNotNull { byId[it] } + dbOtherFamilies.filter { it.id !in order }
+        } ?: dbOtherFamilies
+        val listState = rememberLazyListState()
+        val reorder = rememberDragReorderState(
+            listState,
+            canMove = { it is Long },
+            onMove = { from, to ->
+                val ids = otherFamilies.map { it.id }.toMutableList()
+                val toIndex = ids.indexOf(to as Long)
+                if (ids.remove(from as Long) && toIndex >= 0) ids.add(toIndex, from)
+                dragOrder = ids
+            },
+            onDrop = {
+                val order = dragOrder
+                if (order != null && order != dbOtherFamilies.map { it.id }) {
+                    scope.launch { repo.reorderFamilies(order + singleFamilies.map { it.id }) }
+                }
+            },
+        )
         val list = families
         LazyColumn(
-            Modifier.fillMaxSize().padding(padding),
+            Modifier.fillMaxSize().padding(padding).dragReorder(reorder),
+            state = listState,
             contentPadding = PaddingValues(start = 12.dp, end = 12.dp, top = 8.dp, bottom = 96.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
@@ -234,8 +264,6 @@ fun FamilyListScreen(
                     )
                 }
             }
-            // One-person families are shown together in a single card at the top.
-            val (singleFamilies, otherFamilies) = list.orEmpty().partition { membersByFamily[it.id].orEmpty().size == 1 }
             if (singleFamilies.isNotEmpty()) {
                 item(key = "individuals") {
                     FamilyCard(
@@ -253,6 +281,7 @@ fun FamilyListScreen(
             items(otherFamilies, key = { it.id }) { family ->
                 val members = membersByFamily[family.id].orEmpty()
                 FamilyCard(
+                    modifier = draggableItem(reorder, family.id),
                     title = familyTitle(family.name, members.map { it.person }),
                     members = members,
                     tag = family.tagId?.let { tagsById[it] },
@@ -301,6 +330,7 @@ private fun FamilyCard(
     /** For the individuals card: each person's (one-person family's) tag is shown on their picture. */
     showMemberTags: Boolean = false,
     faceSize: FaceSize = FaceSize.NORMAL,
+    modifier: Modifier = Modifier,
 ) {
     val content: @Composable () -> Unit = {
         Column(Modifier.padding(12.dp)) {
@@ -353,8 +383,8 @@ private fun FamilyCard(
         }
     }
     if (onClick != null) {
-        Card(onClick = onClick, modifier = Modifier.fillMaxWidth()) { content() }
+        Card(onClick = onClick, modifier = modifier.fillMaxWidth()) { content() }
     } else {
-        Card(modifier = Modifier.fillMaxWidth()) { content() }
+        Card(modifier = modifier.fillMaxWidth()) { content() }
     }
 }

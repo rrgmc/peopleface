@@ -77,6 +77,21 @@ class RepositoryTest {
     }
 
     @Test
+    fun familiesKeepTheOrderTheyAreDraggedTo() = runTest {
+        val group = repo.addGroup("School")
+        val silva = repo.addFamily(group, "Silva")
+        val costa = repo.addFamily(group, "Costa")
+        suspend fun names() = repo.observeFamilies(group).first().map { it.name }
+        assertEquals(listOf("Silva", "Costa"), names()) // in the order added
+
+        repo.reorderFamilies(listOf(costa, silva))
+        assertEquals(listOf("Costa", "Silva"), names())
+
+        repo.addFamily(group, "Abreu") // new families go last
+        assertEquals(listOf("Costa", "Silva", "Abreu"), names())
+    }
+
+    @Test
     fun addPeopleSkipsBlankNames() = runTest {
         val group = repo.addGroup("School")
         val rows = listOf(

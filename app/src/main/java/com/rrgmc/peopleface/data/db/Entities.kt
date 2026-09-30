@@ -71,6 +71,8 @@ data class FamilyEntity(
     /** Optional tag of the same group (database v3). */
     @ColumnInfo(name = "tag_id") val tagId: Long? = null,
     @ColumnInfo(name = "created_at") val createdAt: Long = System.currentTimeMillis(),
+    /** Position in the group, set by dragging (database v6). Families from before that are all 0, then by name. */
+    @ColumnInfo(name = "sort_order", defaultValue = "0") val sortOrder: Int = 0,
 )
 
 enum class Role { ADULT, CHILD }

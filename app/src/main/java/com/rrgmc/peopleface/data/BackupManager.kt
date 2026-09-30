@@ -66,6 +66,6 @@ class BackupManager(private val context: Context, private val container: AppCont
     class InvalidBackupException : Exception("Not a PeopleFace backup")
 
     private companion object {
-        const val CURRENT_VERSION = 5
+        const val CURRENT_VERSION = 6
     }
 }
