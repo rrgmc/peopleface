@@ -12,7 +12,6 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -22,9 +21,7 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.zIndex
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.launch
 
 /**
  * Reordering the items of a LazyColumn by long-pressing and dragging them. Only items whose key passes
@@ -39,12 +36,11 @@ fun rememberDragReorderState(
     onMove: (from: Any, to: Any) -> Unit,
     onDrop: () -> Unit,
 ): DragReorderState {
-    val scope = rememberCoroutineScope()
     val currentCanMove by rememberUpdatedState(canMove)
     val currentOnMove by rememberUpdatedState(onMove)
     val currentOnDrop by rememberUpdatedState(onDrop)
     val state = remember(listState) {
-        DragReorderState(listState, scope, { currentCanMove(it) }, { a, b -> currentOnMove(a, b) }, { currentOnDrop() })
+        DragReorderState(listState, { currentCanMove(it) }, { a, b -> currentOnMove(a, b) }, { currentOnDrop() })
     }
     LaunchedEffect(state) {
         // Scrolls when the dragged item is held against the top or bottom edge.
@@ -55,7 +51,6 @@ fun rememberDragReorderState(
 
 class DragReorderState internal constructor(
     private val listState: LazyListState,
-    private val scope: CoroutineScope,
     private val canMove: (Any) -> Boolean,
     private val onMove: (Any, Any) -> Unit,
     private val onDrop: () -> Unit,
@@ -101,11 +96,10 @@ class DragReorderState internal constructor(
             middle.toInt() in it.offset..(it.offset + it.size) && it.key != item.key && canMove(it.key)
         }
         if (target != null) {
-            // Moving the first visible item would otherwise scroll the list along with it.
+            // The list keeps its first visible item in place, following it by key: when that item is the one
+            // moved, the list would scroll along with it, again and again. Keep the scroll position instead.
             if (item.index == listState.firstVisibleItemIndex || target.index == listState.firstVisibleItemIndex) {
-                val index = listState.firstVisibleItemIndex
-                val offset = listState.firstVisibleItemScrollOffset
-                scope.launch { listState.scrollToItem(index, offset) }
+                listState.requestScrollToItem(listState.firstVisibleItemIndex, listState.firstVisibleItemScrollOffset)
             }
             onMove(item.key, target.key)
         } else {
