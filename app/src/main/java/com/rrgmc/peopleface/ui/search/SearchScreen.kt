@@ -35,6 +35,7 @@ import com.rrgmc.peopleface.R
 import com.rrgmc.peopleface.appContainer
 import com.rrgmc.peopleface.data.db.PersonRow
 import com.rrgmc.peopleface.ui.common.Avatar
+import com.rrgmc.peopleface.ui.common.nameStyle
 import com.rrgmc.peopleface.ui.common.familyLabels
 import com.rrgmc.peopleface.ui.common.roleText
 import java.text.Normalizer
@@ -45,10 +46,13 @@ private val MARKS = "\\p{Mn}+".toRegex()
 fun normalizeForSearch(s: String): String =
     MARKS.replace(Normalizer.normalize(s, Normalizer.Form.NFD), "").lowercase()
 
-/** Every word of the query must appear in one of the person's texts; [extra] is e.g. the family label. */
+/**
+ * Every word of the query must appear in one of the person's texts; [extra] is e.g. the family label.
+ * A placeholder name ("Pai") is not a real name, so it isn't searched.
+ */
 fun PersonRow.matches(normalizedQuery: String, extra: String = ""): Boolean =
     normalizedQuery.split(' ').filter { it.isNotBlank() }.all { term ->
-        listOf(person.name, person.notes, familyName, groupName, tagName.orEmpty(), extra)
+        listOf(if (person.isPlaceholder) "" else person.name, person.notes, familyName, groupName, tagName.orEmpty(), extra)
             .any { normalizeForSearch(it).contains(term) }
     }
 
@@ -99,7 +103,7 @@ fun SearchScreen(onBack: () -> Unit, onOpenPerson: (Long) -> Unit) {
                     .filter { it.isNotBlank() }
                 ListItem(
                     leadingContent = { Avatar(row.thumb, row.person.role) },
-                    headlineContent = { Text(row.person.name) },
+                    headlineContent = { Text(row.person.name, style = nameStyle(row.person)) },
                     supportingContent = { Text(details.joinToString(" · ")) },
                     modifier = Modifier.clickable { onOpenPerson(row.person.id) },
                 )

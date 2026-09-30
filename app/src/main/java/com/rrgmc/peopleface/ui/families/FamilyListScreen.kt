@@ -64,6 +64,7 @@ import com.rrgmc.peopleface.data.db.PersonRow
 import com.rrgmc.peopleface.data.db.TagEntity
 import com.rrgmc.peopleface.data.sortedByName
 import com.rrgmc.peopleface.ui.common.Avatar
+import com.rrgmc.peopleface.ui.common.nameStyle
 import com.rrgmc.peopleface.ui.common.ConfirmDialog
 import com.rrgmc.peopleface.ui.common.GroupIcon
 import com.rrgmc.peopleface.ui.common.NameNotesDialog
@@ -337,7 +338,7 @@ private fun FamilyCard(
                             }
                             Text(
                                 m.person.name,
-                                style = MaterialTheme.typography.labelMedium,
+                                style = nameStyle(m.person, MaterialTheme.typography.labelMedium),
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
                                 textAlign = TextAlign.Center,

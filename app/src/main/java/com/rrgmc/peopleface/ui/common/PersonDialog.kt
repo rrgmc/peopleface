@@ -4,10 +4,13 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -17,8 +20,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role as SemanticsRole
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
 import com.rrgmc.peopleface.R
@@ -31,12 +36,14 @@ fun PersonDialog(
     initialName: String = "",
     initialRole: Role = Role.CHILD,
     initialNotes: String = "",
-    onSave: (name: String, role: Role, notes: String) -> Unit,
+    initialPlaceholder: Boolean = false,
+    onSave: (name: String, role: Role, notes: String, placeholder: Boolean) -> Unit,
     onDismiss: () -> Unit,
 ) {
     var name by rememberSaveable { mutableStateOf(initialName) }
     var role by rememberSaveable { mutableStateOf(initialRole) }
     var notes by rememberSaveable { mutableStateOf(initialNotes) }
+    var placeholder by rememberSaveable { mutableStateOf(initialPlaceholder) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -49,6 +56,7 @@ fun PersonDialog(
                     keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words),
                     modifier = Modifier.fillMaxWidth(),
                 )
+                PlaceholderCheckbox(placeholder, onChange = { placeholder = it })
                 FlowRow(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     modifier = Modifier.padding(top = 8.dp),
@@ -73,9 +81,23 @@ fun PersonDialog(
         confirmButton = {
             TextButton(
                 enabled = name.isNotBlank(),
-                onClick = { onDismiss(); onSave(name, role, notes) },
+                onClick = { onDismiss(); onSave(name, role, notes, placeholder) },
             ) { Text(stringResource(R.string.save)) }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },
     )
+}
+
+/** "Pai" / "Mãe" until the real name is known: shown, but left out of search and the quiz. */
+@Composable
+private fun PlaceholderCheckbox(checked: Boolean, onChange: (Boolean) -> Unit) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .fillMaxWidth()
+            .toggleable(value = checked, role = SemanticsRole.Checkbox, onValueChange = onChange),
+    ) {
+        Checkbox(checked = checked, onCheckedChange = null, modifier = Modifier.padding(12.dp))
+        Text(stringResource(R.string.placeholder_name))
+    }
 }

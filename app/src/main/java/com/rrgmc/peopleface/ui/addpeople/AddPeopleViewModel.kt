@@ -14,6 +14,8 @@ import kotlinx.coroutines.launch
 class PersonRowState(val key: Int, role: Role) {
     var role by mutableStateOf(role)
     var name by mutableStateOf("")
+    /** The name is only a label such as "Pai" until the real name is known. */
+    var placeholder by mutableStateOf(false)
 }
 
 /**
@@ -73,7 +75,7 @@ class AddPeopleViewModel(
         saving = true
         viewModelScope.launch {
             try {
-                val people = rows.map { Repository.NewPerson(it.name, it.role) }
+                val people = rows.map { Repository.NewPerson(it.name, it.role, it.placeholder) }
                 if (individuals) {
                     repo.addIndividuals(groupId, people)
                     onSaved(null)

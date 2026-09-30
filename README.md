@@ -11,6 +11,8 @@ Android app to remember people's names.
 - **People** have a thumbnail and multiple photos. Each photo is a face cut from a larger picture:
   the app detects faces on-device (ML Kit, works offline), you tap the person you want and adjust the square if needed.
   With **Faces from a photo** on a family screen, you can cut every family member out of a single group picture.
+- **Placeholder names**: when a real name isn't known yet, keep a label such as "Dad" and mark it as a placeholder
+  (the ? next to the name, or the checkbox when editing). It's shown in italics and left out of search and the quiz.
 - **Search** across names, families, groups, tags and notes (ignores accents).
 - **Quiz**: multiple choice or flashcards, per group or across all groups.
 - **Backup**: everything, including photos, lives in one SQLite file (`peopleface.db`).

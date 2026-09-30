@@ -19,6 +19,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.LocalContentColor
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -37,6 +38,8 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -131,6 +134,13 @@ fun roleText(role: Role): String = when (role) {
 
 @Composable
 fun roleText(person: PersonEntity) = roleText(person.role)
+
+/** Placeholder names ("Pai", "Mãe") are shown in italic and a softer colour, so they don't read as real names. */
+@Composable
+fun nameStyle(person: PersonEntity, style: TextStyle = LocalTextStyle.current): TextStyle =
+    if (person.isPlaceholder) {
+        style.copy(fontStyle = FontStyle.Italic, color = LocalContentColor.current.copy(alpha = 0.7f))
+    } else style
 
 /** A family without its own name is shown by the names of its members. */
 @Composable

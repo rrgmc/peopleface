@@ -98,6 +98,7 @@ import com.rrgmc.peopleface.data.sortedByName
 import com.rrgmc.peopleface.image.ViewZoom
 import com.rrgmc.peopleface.image.Box as ImageBox
 import com.rrgmc.peopleface.ui.common.Avatar
+import com.rrgmc.peopleface.ui.common.nameStyle
 import com.rrgmc.peopleface.ui.common.familyLabels
 import com.rrgmc.peopleface.ui.search.matches
 import com.rrgmc.peopleface.ui.search.normalizeForSearch
@@ -347,7 +348,7 @@ private fun PeopleChips(
                     label = {
                         // Second line tells apart people with the same name.
                         Column(Modifier.padding(vertical = 4.dp)) {
-                            Text(m.person.name)
+                            Text(m.person.name, style = nameStyle(m.person))
                             if (family.isNotBlank()) {
                                 Text(family, style = MaterialTheme.typography.labelSmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
                             }
