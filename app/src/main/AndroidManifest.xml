@@ -15,9 +15,12 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.PeopleFace">
 
+        <!-- singleTask: one instance only. Otherwise "Share" opens a second copy inside the sharing app's task,
+             and the launcher icon can stack a fresh copy (on the first screen) over the running one. -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
+            android:launchMode="singleTask"
             android:windowSoftInputMode="adjustResize">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
