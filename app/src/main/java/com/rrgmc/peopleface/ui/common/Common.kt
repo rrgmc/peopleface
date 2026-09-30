@@ -10,8 +10,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
@@ -108,6 +110,17 @@ private fun ImageOrPlaceholder(bitmap: ImageBitmap?, modifier: Modifier, content
 @Composable
 fun Avatar(thumb: ByteArray?, role: Role?, modifier: Modifier = Modifier, size: Dp = 48.dp) {
     BlobImage(thumb, modifier.size(size).clip(CircleShape), role = role)
+}
+
+/** The group's icon picture, or the generic groups symbol when it has none. */
+@Composable
+fun GroupIcon(icon: ByteArray?, modifier: Modifier = Modifier, size: Dp = 40.dp) {
+    val bitmap = remember(icon) { icon?.toImageBitmap() }
+    if (bitmap != null) {
+        Image(bitmap, null, modifier.size(size).clip(RoundedCornerShape(8.dp)), contentScale = ContentScale.Crop)
+    } else {
+        Box(modifier.size(size), contentAlignment = Alignment.Center) { Icon(Icons.Default.Groups, null) }
+    }
 }
 
 @Composable

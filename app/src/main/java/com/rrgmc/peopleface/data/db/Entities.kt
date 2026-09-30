@@ -13,8 +13,16 @@ data class GroupEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val name: String,
     val notes: String = "",
+    /** Optional square picture (thumbnail-size JPEG) shown next to the group name (database v4). */
+    @ColumnInfo(typeAffinity = ColumnInfo.BLOB) val icon: ByteArray? = null,
     @ColumnInfo(name = "created_at") val createdAt: Long = System.currentTimeMillis(),
-)
+) {
+    override fun equals(other: Any?) =
+        other is GroupEntity && other.id == id && other.name == name && other.notes == notes &&
+            other.createdAt == createdAt && other.icon.contentEquals(icon)
+
+    override fun hashCode() = id.hashCode()
+}
 
 /** A short colored label that can be put on families of a group, e.g. "Bus" or "Class B". */
 @Entity(

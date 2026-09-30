@@ -36,6 +36,7 @@ fun ChooseGroupDialog(onPick: (groupId: Long) -> Unit, onDismiss: () -> Unit) {
                     items(list, key = { it.group.id }) { (group) ->
                         ListItem(
                             headlineContent = { Text(group.name) },
+                            leadingContent = { GroupIcon(group.icon) },
                             modifier = Modifier.fillMaxWidth().clickable { onPick(group.id) },
                         )
                     }

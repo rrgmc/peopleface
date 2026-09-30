@@ -124,7 +124,7 @@ private const val GESTURE_ZOOM = 4
 /**
  * Cuts faces out of a larger picture. With [personId] the crop goes to that person and the screen closes.
  * With [familyId] or [groupId] ("faces from a photo") each face can be assigned in turn to someone of that
- * family or group.
+ * family or group. With [iconGroupId] the square becomes that group's icon (no face detection).
  */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -133,11 +133,12 @@ fun FaceCropScreen(
     personId: Long,
     familyId: Long,
     groupId: Long,
+    iconGroupId: Long = 0,
     onDone: () -> Unit,
 ) {
     val app = LocalContext.current.applicationContext as PeopleFaceApp
     val repo = app.container.repository
-    val vm: CropViewModel = viewModel { CropViewModel(app, fileNames, personId) }
+    val vm: CropViewModel = viewModel { CropViewModel(app, fileNames, personId, iconGroupId) }
     val pickMode = familyId != 0L || groupId != 0L
     val people by remember(familyId, groupId) {
         when {
@@ -188,7 +189,15 @@ fun FaceCropScreen(
             TopAppBar(
                 title = {
                     Column {
-                        Text(stringResource(if (pickMode) R.string.crop_group_title else R.string.crop_title))
+                        Text(
+                            stringResource(
+                                when {
+                                    vm.iconMode -> R.string.group_icon_title
+                                    pickMode -> R.string.crop_group_title
+                                    else -> R.string.crop_title
+                                }
+                            )
+                        )
                         if (vm.photoCount > 1) {
                             Text(
                                 stringResource(R.string.photo_n_of_m, vm.photoIndex + 1, vm.photoCount),
@@ -248,7 +257,8 @@ fun FaceCropScreen(
                     Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                         if (!vm.loading && vm.error == null) {
                             Text(
-                                if (vm.faces.isEmpty()) stringResource(R.string.no_faces_found)
+                                if (vm.iconMode) stringResource(R.string.group_icon_hint)
+                                else if (vm.faces.isEmpty()) stringResource(R.string.no_faces_found)
                                 else pluralStringResource(R.plurals.faces_found, vm.faces.size, vm.faces.size) +
                                     " " + stringResource(R.string.crop_hint),
                                 style = MaterialTheme.typography.bodySmall,
@@ -284,7 +294,7 @@ fun FaceCropScreen(
                         }
                     }
                     Button(
-                        enabled = vm.crop != null && vm.target != null && !vm.saving,
+                        enabled = vm.canSave,
                         onClick = {
                             vm.save { savedId ->
                                 when {
@@ -294,6 +304,7 @@ fun FaceCropScreen(
                                         filter = ""
                                         scope.launch { snackbar.showSnackbar(savedMessage.format(name)) }
                                     }
+                                    vm.iconMode -> onDone()
                                     vm.hasNextPhoto -> vm.nextPhoto() // one person, several pictures
                                     else -> onDone()
                                 }
@@ -301,7 +312,7 @@ fun FaceCropScreen(
                         },
                         modifier = Modifier.weight(1f),
                     ) {
-                        Text(stringResource(R.string.save_face))
+                        Text(stringResource(if (vm.iconMode) R.string.save_icon else R.string.save_face))
                     }
                 }
             }

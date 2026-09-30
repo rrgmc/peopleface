@@ -8,7 +8,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.Quiz
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
@@ -37,6 +36,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.rrgmc.peopleface.R
 import com.rrgmc.peopleface.appContainer
+import com.rrgmc.peopleface.ui.common.GroupIcon
 import com.rrgmc.peopleface.ui.common.NameNotesDialog
 import kotlinx.coroutines.launch
 
@@ -92,7 +92,7 @@ fun GroupListScreen(
                                     " · " + pluralStringResource(R.plurals.people_count, g.personCount, g.personCount)
                             )
                         },
-                        leadingContent = { Icon(Icons.Default.Groups, null) },
+                        leadingContent = { GroupIcon(g.group.icon) },
                         modifier = Modifier.clickable { onOpenGroup(g.group.id) },
                     )
                     HorizontalDivider()

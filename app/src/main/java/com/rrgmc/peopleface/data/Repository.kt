@@ -26,6 +26,8 @@ class Repository(private val db: AppDatabase) {
         groups.insert(GroupEntity(name = name.trim(), notes = notes.trim()))
     suspend fun updateGroup(group: GroupEntity) = groups.update(group)
     suspend fun deleteGroup(group: GroupEntity) = groups.delete(group)
+    /** [icon]: JPEG bytes, or null to remove the icon. */
+    suspend fun setGroupIcon(groupId: Long, icon: ByteArray?) = groups.setIcon(groupId, icon)
 
     // Families
     fun observeFamilies(groupId: Long) = families.observeByGroup(groupId).map { list -> list.sortedByName { it.name } }

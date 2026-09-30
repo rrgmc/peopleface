@@ -47,6 +47,9 @@ interface GroupDao {
 
     @Delete
     suspend fun delete(group: GroupEntity)
+
+    @Query("UPDATE origin_groups SET icon = :icon WHERE id = :groupId")
+    suspend fun setIcon(groupId: Long, icon: ByteArray?)
 }
 
 @Dao
