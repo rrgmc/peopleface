@@ -253,7 +253,7 @@ fun FamilyListScreen(
             items(otherFamilies, key = { it.id }) { family ->
                 val members = membersByFamily[family.id].orEmpty()
                 FamilyCard(
-                    title = familyTitle(family.name, members.map { it.person.name }),
+                    title = familyTitle(family.name, members.map { it.person }),
                     members = members,
                     tag = family.tagId?.let { tagsById[it] },
                     onClick = { onOpenFamily(family.id) },

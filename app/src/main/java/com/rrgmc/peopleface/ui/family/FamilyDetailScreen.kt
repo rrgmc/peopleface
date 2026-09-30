@@ -84,7 +84,7 @@ fun FamilyDetailScreen(
     var overflowMenu by remember { mutableStateOf(false) }
     val photoSource = rememberPhotoSource(onCropGroupPhoto)
 
-    val title = familyTitle(family?.name.orEmpty(), members.map { it.person.name })
+    val title = familyTitle(family?.name.orEmpty(), members.map { it.person })
 
     Scaffold(
         topBar = {

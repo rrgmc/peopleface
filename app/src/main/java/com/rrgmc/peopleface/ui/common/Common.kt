@@ -142,12 +142,15 @@ fun nameStyle(person: PersonEntity, style: TextStyle = LocalTextStyle.current): 
         style.copy(fontStyle = FontStyle.Italic, color = LocalContentColor.current.copy(alpha = 0.7f))
     } else style
 
-/** A family without its own name is shown by the names of its members. */
+/** A family without its own name is shown by the names of its members, leaving out placeholders ("Pai"). */
 @Composable
-fun familyTitle(name: String, memberNames: List<String>): String = when {
-    name.isNotBlank() -> name
-    memberNames.isNotEmpty() -> memberNames.joinToString(", ")
-    else -> stringResource(R.string.family_unnamed)
+fun familyTitle(name: String, members: List<PersonEntity>): String {
+    val memberNames = members.filterNot { it.isPlaceholder }.map { it.name }
+    return when {
+        name.isNotBlank() -> name
+        memberNames.isNotEmpty() -> memberNames.joinToString(", ")
+        else -> stringResource(R.string.family_unnamed)
+    }
 }
 
 @Composable
