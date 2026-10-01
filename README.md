@@ -22,6 +22,24 @@ Android app to remember people's names.
 
 Only the cropped faces are stored (512 px JPEG + 192 px thumbnail); original pictures are not kept.
 
+## Screenshots
+
+The people in these screenshots are made-up demo data with drawn avatars.
+
+<p>
+  <img src="docs/screenshots/groups.png" width="200" alt="Groups">
+  <img src="docs/screenshots/families.png" width="200" alt="Families of a group, with tags">
+  <img src="docs/screenshots/family.png" width="200" alt="A family and its members">
+  <img src="docs/screenshots/person.png" width="200" alt="A person with photos, family and tag">
+</p>
+<p>
+  <img src="docs/screenshots/quiz.png" width="200" alt="Quiz, multiple choice">
+  <img src="docs/screenshots/flashcard.png" width="200" alt="Quiz, flashcard">
+  <img src="docs/screenshots/search.png" width="200" alt="Search">
+  <img src="docs/screenshots/tags.png" width="200" alt="Tags of a group">
+  <img src="docs/screenshots/settings.png" width="200" alt="Settings with backup">
+</p>
+
 ## Build
 
 Requirements: JDK 17 and the Android SDK (platform 35).
