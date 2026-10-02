@@ -43,9 +43,12 @@ Requirements: JDK 17 and the Android SDK (platform 35).
 ./gradlew testDebugUnitTest
 ```
 
-The GitHub Actions workflow (`Build APK`) only runs when triggered manually from the Actions tab.
-It publishes the debug APK as the `latest` release (replaced on every run), so it can be downloaded
-from the repository's Releases page, including from a phone.
+The GitHub Actions workflow (`Build APK`) runs when a tag starting with `v` (for example `v1.24`)
+is pushed, or when a release with a new `v` tag is created on GitHub. It attaches the debug APK to
+that tag's release and creates the release if it does not exist yet.
+It can also be run manually from the Actions tab. A manual run publishes the debug APK as the
+`latest` release, which is replaced on every run.
+Either way the APK can be downloaded from the repository's Releases page, including from a phone.
 
 ## Structure
 
