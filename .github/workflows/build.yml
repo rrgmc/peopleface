@@ -1,16 +1,21 @@
-# Manual-only to keep CI minutes low: run it from the Actions tab when you want an APK.
-# The APK is published as the "latest" release (replaced on every run), so it can be
-# downloaded directly from the Releases page, also on a phone.
+# Runs when a version tag (v1.24, ...) is pushed, or a release is created with a new tag
+# on GitHub, and manually from the Actions tab.
+# A tag build attaches the APK to that tag's release, creating the release if needed.
+# A manual build publishes the APK as the "latest" release (replaced on every run).
+# Either way the APK can be downloaded from the Releases page, also on a phone.
 name: Build APK
 
 on:
+  push:
+    tags:
+      - 'v*'
   workflow_dispatch:
 
 permissions:
   contents: write
 
 concurrency:
-  group: build-apk
+  group: build-apk-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
@@ -25,7 +30,22 @@ jobs:
           java-version: 17
       - uses: gradle/actions/setup-gradle@v4
       - run: ./gradlew assembleDebug testDebugUnitTest
+      - name: Attach APK to the tag's release
+        if: github.ref_type == 'tag'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          apk=$(ls app/build/outputs/apk/debug/peopleface-*-debug.apk)
+          if gh release view "$GITHUB_REF_NAME" > /dev/null 2>&1; then
+            gh release upload "$GITHUB_REF_NAME" "$apk" --clobber
+          else
+            gh release create "$GITHUB_REF_NAME" "$apk" \
+              --title "$GITHUB_REF_NAME" \
+              --generate-notes \
+              --latest
+          fi
       - name: Publish "latest" release
+        if: github.ref_type != 'tag'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
