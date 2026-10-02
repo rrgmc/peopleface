@@ -191,13 +191,13 @@ class RepositoryTest {
 
     @Test
     fun searchIgnoresAccentsAndCase() = runTest {
-        val g = repo.addGroup("Clube Pinheiros")
+        val g = repo.addGroup("Clube Aurora")
         val f = repo.addFamily(g, "Conceição")
         repo.addPerson(f, "José", Role.ADULT, notes = "Joga futebol")
         val row = repo.observeAllPersons().first().single()
 
         assertTrue(row.matches(normalizeForSearch("jose")))
-        assertTrue(row.matches(normalizeForSearch("conceicao pinheiros")))
+        assertTrue(row.matches(normalizeForSearch("conceicao aurora")))
         assertTrue(row.matches(normalizeForSearch("FUTEBOL")))
         assertFalse(row.matches(normalizeForSearch("maria")))
     }
@@ -206,25 +206,25 @@ class RepositoryTest {
     fun familyLabelsTellApartSameNames() = runTest {
         val g = repo.addGroup("School")
         val f1 = repo.addPeople(g, 0, "", listOf(
-            Repository.NewPerson("Michelangelo", Role.ADULT),
-            Repository.NewPerson("Suzi", Role.ADULT),
-            Repository.NewPerson("Isabella", Role.CHILD),
-            Repository.NewPerson("Milena", Role.CHILD),
+            Repository.NewPerson("Roberto", Role.ADULT),
+            Repository.NewPerson("Teresa", Role.ADULT),
+            Repository.NewPerson("Valentina", Role.CHILD),
+            Repository.NewPerson("Helena", Role.CHILD),
         ))!!
-        val f2 = repo.addPeople(g, 0, "Silva", listOf(Repository.NewPerson("Isabella", Role.CHILD), Repository.NewPerson("Leo", Role.CHILD)))!!
+        val f2 = repo.addPeople(g, 0, "Silva", listOf(Repository.NewPerson("Valentina", Role.CHILD), Repository.NewPerson("Leo", Role.CHILD)))!!
         val f3 = repo.addPeople(g, 0, "", listOf(Repository.NewPerson("Ana", Role.CHILD)))!!
         val rows = repo.observePersonsInGroup(g).first()
         val labels = familyLabels(rows)
         fun label(family: Long, name: String) = labels[rows.single { it.person.familyId == family && it.person.name == name }.person.id]
 
-        assertEquals("Michelangelo & Suzi", label(f1, "Isabella"))
-        assertEquals("Suzi", label(f1, "Michelangelo")) // never their own name
-        assertEquals("Silva · Leo", label(f2, "Isabella"))
+        assertEquals("Roberto & Teresa", label(f1, "Valentina"))
+        assertEquals("Teresa", label(f1, "Roberto")) // never their own name
+        assertEquals("Silva · Leo", label(f2, "Valentina"))
         assertEquals("", label(f3, "Ana"))
 
         // Searching a parent's name finds the kid.
-        val isabella1 = rows.single { it.person.familyId == f1 && it.person.name == "Isabella" }
-        assertTrue(isabella1.matches(normalizeForSearch("isa michel"), label(f1, "Isabella")!!))
+        val valentina1 = rows.single { it.person.familyId == f1 && it.person.name == "Valentina" }
+        assertTrue(valentina1.matches(normalizeForSearch("vale rob"), label(f1, "Valentina")!!))
     }
 
     @Test
@@ -232,7 +232,7 @@ class RepositoryTest {
         val g = repo.addGroup("School")
         val f = repo.addPeople(g, 0, "", listOf(
             Repository.NewPerson("Pai", Role.ADULT, placeholder = true),
-            Repository.NewPerson("Suzi", Role.ADULT),
+            Repository.NewPerson("Teresa", Role.ADULT),
             Repository.NewPerson("Bento", Role.CHILD),
         ))!!
         val rows = repo.observePersonsInFamily(f).first()
@@ -242,20 +242,20 @@ class RepositoryTest {
         rows.forEach { repo.addPhoto(it.person.id, byteArrayOf(1), byteArrayOf(1)) }
 
         // Not a quiz target nor a wrong answer.
-        assertEquals(listOf("Bento", "Suzi"), repo.personsWithPhotos(g).map { it.person.name }.sorted())
+        assertEquals(listOf("Bento", "Teresa"), repo.personsWithPhotos(g).map { it.person.name }.sorted())
 
         // Neither the placeholder's own name nor the kid's family label matches "pai".
         val labels = familyLabels(rows)
-        assertEquals("Suzi", labels[row("Bento").person.id])
-        assertEquals("Suzi", labels[row("Pai").person.id])
+        assertEquals("Teresa", labels[row("Bento").person.id])
+        assertEquals("Teresa", labels[row("Pai").person.id])
         assertFalse(row("Pai").matches(normalizeForSearch("pai"), labels[row("Pai").person.id]!!))
         assertFalse(row("Bento").matches(normalizeForSearch("pai"), labels[row("Bento").person.id]!!))
         // The placeholder can still be found through their family.
-        assertTrue(row("Pai").matches(normalizeForSearch("suzi"), labels[row("Pai").person.id]!!))
+        assertTrue(row("Pai").matches(normalizeForSearch("teresa"), labels[row("Pai").person.id]!!))
 
         // The flag can be cleared once the real name is known.
-        repo.updatePerson(row("Pai").person.copy(name = "Michelangelo", isPlaceholder = false))
-        assertEquals(listOf("Bento", "Michelangelo", "Suzi"), repo.personsWithPhotos(g).map { it.person.name }.sorted())
+        repo.updatePerson(row("Pai").person.copy(name = "Roberto", isPlaceholder = false))
+        assertEquals(listOf("Bento", "Roberto", "Teresa"), repo.personsWithPhotos(g).map { it.person.name }.sorted())
     }
 
     @Test
