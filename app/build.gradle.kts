@@ -13,8 +13,8 @@ android {
         applicationId = "com.rrgmc.peopleface"
         minSdk = 26
         targetSdk = 35
-        versionCode = 26
-        versionName = "1.25"
+        versionCode = 27
+        versionName = "1.26"
     }
 
     // APK file name: peopleface-<version>-<build type>.apk
