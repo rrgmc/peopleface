@@ -29,13 +29,37 @@ jobs:
           distribution: temurin
           java-version: 17
       - uses: gradle/actions/setup-gradle@v4
-      - run: ./gradlew assembleDebug testDebugUnitTest
+      - name: Restore the release keystore
+        env:
+          SIGNING_KEYSTORE_BASE64: ${{ secrets.SIGNING_KEYSTORE_BASE64 }}
+        run: |
+          if [ -z "$SIGNING_KEYSTORE_BASE64" ]; then
+            echo "::error::The SIGNING_KEYSTORE_BASE64 secret is not set."
+            exit 1
+          fi
+          echo "$SIGNING_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/release.jks"
+      - name: Build and test
+        env:
+          SIGNING_STORE_PASSWORD: ${{ secrets.SIGNING_STORE_PASSWORD }}
+          SIGNING_KEY_ALIAS: ${{ secrets.SIGNING_KEY_ALIAS }}
+          SIGNING_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
+        run: |
+          ./gradlew assembleRelease testDebugUnitTest \
+            "-Ppeopleface.signing.storeFile=$RUNNER_TEMP/release.jks" \
+            "-Ppeopleface.signing.storePassword=$SIGNING_STORE_PASSWORD" \
+            "-Ppeopleface.signing.keyAlias=$SIGNING_KEY_ALIAS" \
+            "-Ppeopleface.signing.keyPassword=$SIGNING_KEY_PASSWORD"
+      # Fails on an unsigned APK and prints the certificate fingerprint.
+      - name: Verify the APK signature
+        run: |
+          apksigner=$(ls -d "$ANDROID_HOME"/build-tools/*/ | sort -V | tail -n 1)apksigner
+          "$apksigner" verify --print-certs app/build/outputs/apk/release/peopleface-*-release.apk
       - name: Attach APK to the tag's release
         if: github.ref_type == 'tag'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          apk=$(ls app/build/outputs/apk/debug/peopleface-*-debug.apk)
+          apk=$(ls app/build/outputs/apk/release/peopleface-*-release.apk)
           if gh release view "$GITHUB_REF_NAME" > /dev/null 2>&1; then
             gh release upload "$GITHUB_REF_NAME" "$apk" --clobber
           else
@@ -50,8 +74,8 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release delete latest --yes --cleanup-tag || true
-          gh release create latest app/build/outputs/apk/debug/peopleface-*-debug.apk \
+          gh release create latest app/build/outputs/apk/release/peopleface-*-release.apk \
             --target "$GITHUB_SHA" \
             --title "Latest build" \
-            --notes "Debug APK built from ${GITHUB_REF_NAME} @ ${GITHUB_SHA::7} on $(date -u '+%Y-%m-%d %H:%M UTC')." \
+            --notes "Release APK built from ${GITHUB_REF_NAME} @ ${GITHUB_SHA::7} on $(date -u '+%Y-%m-%d %H:%M UTC')." \
             --latest

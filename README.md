@@ -40,13 +40,14 @@ Requirements: JDK 17 and the Android SDK (platform 35).
 
 ```
 ./gradlew assembleDebug        # app/build/outputs/apk/debug/peopleface-<version>-debug.apk
+./gradlew assembleRelease      # app/build/outputs/apk/release/peopleface-<version>-release.apk
 ./gradlew testDebugUnitTest
 ```
 
 The GitHub Actions workflow (`Build APK`) runs when a tag starting with `v` (for example `v1.24`)
-is pushed, or when a release with a new `v` tag is created on GitHub. It attaches the debug APK to
+is pushed, or when a release with a new `v` tag is created on GitHub. It attaches the release APK to
 that tag's release and creates the release if it does not exist yet.
-It can also be run manually from the Actions tab. A manual run publishes the debug APK as the
+It can also be run manually from the Actions tab. A manual run publishes the release APK as the
 `latest` release, which is replaced on every run.
 Either way the APK can be downloaded from the repository's Releases page, including from a phone.
 
@@ -62,6 +63,22 @@ app/src/main/java/com/rrgmc/peopleface/
 
 ## Signing
 
-Debug builds are signed with `app/debug.keystore`, committed on purpose (password `android`, alias `androiddebugkey`),
-so APKs built on any machine or in CI can be installed over each other without losing the app's data.
-It is not meant for Play Store releases.
+Release builds are signed with a private key that is not in the repository. Gradle reads it from four properties:
+
+```
+peopleface.signing.storeFile=/path/to/keystore.jks
+peopleface.signing.storePassword=...
+peopleface.signing.keyAlias=...
+peopleface.signing.keyPassword=...
+```
+
+Locally, put them in the user Gradle properties file (`~/.gradle/gradle.properties`).
+In CI, the workflow fills them from the repository secrets `SIGNING_KEYSTORE_BASE64` (the keystore file in base64),
+`SIGNING_STORE_PASSWORD`, `SIGNING_KEY_ALIAS` and `SIGNING_KEY_PASSWORD`.
+Without these properties, `assembleRelease` produces an unsigned APK.
+
+Debug builds are signed with the debug key of the machine that builds them.
+
+Android does not install an APK over one signed with a different key.
+To move from a build signed with another key (a debug build, or any release up to 1.24), export the database
+(Settings → Export database), uninstall the app, install the new APK and import the database.

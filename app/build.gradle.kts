@@ -20,24 +20,27 @@ android {
     // APK file name: peopleface-<version>-<build type>.apk
     base.archivesName = "peopleface-${defaultConfig.versionName}"
 
+    // The release key stays outside the repository. Its location and passwords come from Gradle
+    // properties: the user's gradle.properties locally, -P flags filled from secrets in CI.
+    // Without them the release APK is built unsigned.
+    val signingStoreFile = providers.gradleProperty("peopleface.signing.storeFile").orNull
+
     signingConfigs {
-        // Committed on purpose: every machine and CI run signs debug builds with the same key,
-        // so a new APK installs over the previous one without losing data.
-        getByName("debug") {
-            storeFile = file("debug.keystore")
-            storePassword = "android"
-            keyAlias = "androiddebugkey"
-            keyPassword = "android"
+        if (signingStoreFile != null) {
+            create("release") {
+                storeFile = file(signingStoreFile)
+                storePassword = providers.gradleProperty("peopleface.signing.storePassword").get()
+                keyAlias = providers.gradleProperty("peopleface.signing.keyAlias").get()
+                keyPassword = providers.gradleProperty("peopleface.signing.keyPassword").get()
+            }
         }
     }
 
     buildTypes {
-        debug {
-            signingConfig = signingConfigs.getByName("debug")
-        }
         release {
             isMinifyEnabled = false
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            signingConfig = signingConfigs.findByName("release")
         }
     }
     compileOptions {
